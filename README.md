@@ -148,10 +148,14 @@ Here's an example of the high-level structure of this project:
 ```plaintext
 .
 ├── src
-│   ├── components     # Reusable components
-│   ├── pages          # Main views/pages
 │   ├── apis           # API calls and services
-│   ├── styles         # Global and component-specific styles
+│   ├── assets         # Images, icons, fonts, global styles
+│   ├── components     # Reusable components
+│   ├── context        # React Context providers
+│   ├── hooks          # Custom hooks
+│   ├── layouts        # Layout wrappers
+│   ├── pages          # Main views/pages
+│   ├── routes         # Routing config
 │   └── utils          # Helper functions and utilities
 ├── public
 │   └── index.html     # Main HTML file
