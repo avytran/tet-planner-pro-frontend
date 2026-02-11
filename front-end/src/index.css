@@ -1,6 +1,74 @@
 @import "tailwindcss";
 
-:root {
+@theme {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+
+  --color-primary: var(--color-primary);
+  --color-primary-strong: var(--color-primary-strong);
+
+  --color-accent: var(--color-accent);
+  --color-accent-soft: var(--color-accent-soft);
+
+  --color-festive: var(--color-festive);
+  --color-highlight: var(--color-highlight);
+
+  --color-success: var(--color-success);
+  --color-success-strong: var(--color-success-strong);
+
+  --color-danger: var(--color-danger);
+
+  --font-sans: "Roboto Condensed", var(--font-sans);
+
+  /* Fonts */
+  --font-sans: "Roboto Condensed", system-ui, sans-serif;
+  --font-quote: "Windsong", cursive;
+}
+
+:root[data-theme="apricot"] {
+  --color-bg: #fcf2f0;
+  --color-surface: #ffffff;
+  --color-text: #6e1213;
+  --color-text-muted: #ae100b;
+
+  --color-primary: #ae100b;
+  --color-primary-strong: #6e1213;
+
+  --color-accent: #ff8c42;
+  --color-accent-soft: #f9b42b;
+
+  --color-festive: #f0d757;
+  --color-highlight: #effc57;
+
+  --color-success: #6fbb4f;
+  --color-success-strong: #218620;
+  --color-danger: #e71d36;
+}
+
+:root[data-theme="blossom"] {
+  --color-bg: #fcf2f0;
+  --color-surface: #ffffff;
+  --color-text: #6e1213;
+  --color-text-muted: #ae100b;
+
+  --color-primary: #dd2d4a;
+  --color-primary-strong: #ae100b;
+
+  --color-accent: #f26a8d;
+  --color-accent-soft: #f49cbb;
+
+  --color-festive: #febeb5;
+  --color-highlight: #fff5f3;
+
+  --color-success: #6fbb4f;
+  --color-success-strong: #218620;
+  --color-danger: #dd2d4a;
+}
+
+/* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -13,9 +81,11 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
+} */
 
 body {
+  @apply font-sans text-text;
+
   margin: 0;
   display: flex;
   place-items: center;
