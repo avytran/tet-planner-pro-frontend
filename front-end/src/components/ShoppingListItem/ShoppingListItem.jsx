@@ -1,15 +1,9 @@
 import React from "react";
 import { ShoppingBagIcon } from "@heroicons/react/24/outline";
-export default function ShoppingListItem({
-  name,
-  price,
-  quantity,
-  color,
-  width,
-}) {
+export default function ShoppingListItem({ name, price, quantity, color }) {
   return (
     <div
-      className={`px-6 py-5 justify-items-start rounded-2xl flex justify-between items-center ${width}  ${color}`}
+      className={`px-6 py-5 justify-items-start rounded-2xl flex justify-between items-center w-xs md:w-sm  ${color}`}
     >
       <ShoppingBagIcon className="w-6 h-6 mr-4 " />
       <div className="flex-7">

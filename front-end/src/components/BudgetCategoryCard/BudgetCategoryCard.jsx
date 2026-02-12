@@ -17,7 +17,7 @@ export default function BudgetCategoryCard({
     color = "highlight";
   }
   return (
-    <div className="p-10 w-sm bg-white rounded-[40px] flex flex-col gap-4">
+    <div className="p-10 w-xs md:w-sm bg-white rounded-[40px] flex flex-col gap-4 ">
       <div className="flex ">
         <PencilIcon className="w-5 h-5 mr-4 " />
         <TrashIcon className="w-5 h-5 mr-4 " />
