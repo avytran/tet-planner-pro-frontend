@@ -87,8 +87,8 @@ body {
   @apply font-sans text-text;
 
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
+  place-items: unset;
   min-width: 320px;
   min-height: 100vh;
 }
