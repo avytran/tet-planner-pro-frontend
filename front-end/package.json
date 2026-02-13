@@ -25,6 +25,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^7.3.7",
     "@mui/x-charts": "^8.27.0",
+    "@heroicons/react": "^2.2.0",
     "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.4",
     "react": "^18.2.0",
