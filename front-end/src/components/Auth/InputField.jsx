@@ -9,11 +9,11 @@ export const InputField = ({
   ...props
 }) => {
   return (
-    <div className="space-y-1 mb-3">
+    <div className="space-y-1 mb-8">
       {label && (
         <label
           htmlFor={name}
-          className="block  font-body-strong font-bold  text-primary-strong mb-3"
+          className="block  font-body-strong font-bold  text-primary-strong"
         >
           {label}
         </label>

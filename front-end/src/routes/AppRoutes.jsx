@@ -8,6 +8,7 @@ import BudgetManagementPage from "../pages/BudgetManagementPage";
 import ShoppingListPage from "../pages/ShoppingListPage";
 import AboutPage from "../pages/AboutPage";
 import { LoginPage } from "../pages/LoginPage/LoginPage";
+import { SignupPage } from "../pages/SignupPage/SignupPage";
 
 export default function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ export default function AppRoutes() {
       </Route>
       <Route element={<AuthLayout />}>
         <Route path="login" element={<LoginPage />} />
+        <Route path="sign-up" element={<SignupPage />} />
       </Route>
     </Routes>
   );
