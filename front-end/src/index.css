@@ -31,8 +31,8 @@
 :root[data-theme="apricot"] {
   --color-bg: #fcf2f0;
   --color-surface: #ffffff;
-  --color-text: #6e1213;
-  --color-text-muted: #ae100b;
+  --color-text: #ae100b;
+  --color-text-muted: #6e1213;
 
   --color-primary: #ae100b;
   --color-primary-strong: #6e1213;
