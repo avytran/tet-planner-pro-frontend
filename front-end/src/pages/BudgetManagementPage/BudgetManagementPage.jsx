@@ -8,6 +8,7 @@ import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel.jsx"
 import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
 import { Box, Typography } from "@mui/material";
 import { PencilIcon } from "@heroicons/react/24/outline";
+import { LineChart } from "@mui/x-charts/LineChart";
 
 export default function BudgetManagementPage() {
   const value = 6500000;
@@ -66,6 +67,33 @@ export default function BudgetManagementPage() {
       price: 300000,
       quantity: 5,
       category: "Food",
+    },
+  ];
+
+  const lineChartData = [
+    {
+      curve: "linear",
+      color: "var(--color-success)",
+      data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5],
+      label: "Food",
+    },
+    {
+      curve: "linear",
+      color: "var(--color-danger)",
+      data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3],
+      label: "Decoration",
+    },
+    {
+      curve: "linear",
+      color: "var(--color-accent)",
+      data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4],
+      label: "Cloths",
+    },
+    {
+      curve: "linear",
+      color: "var(--color-highlight)",
+      data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4],
+      label: "Others",
     },
   ];
 
@@ -212,7 +240,24 @@ export default function BudgetManagementPage() {
           </div>
         </div>
       </div>
-      <div className="bg-white">Spending timeline</div>
+      <div className="bg-white w-full flex flex-col justify-center items-center gap-5 py-12 px-4  md:p-20 relative">
+        <h1 className="font-bold text-5xl">Spending timeline</h1>
+        <p className="font-normal text-xl md:text-3xl text-center">
+          Track how your spending evolves as Tết approaches
+        </p>
+        <div className="w-full h-125  ">
+          <LineChart
+            series={lineChartData}
+            slotProps={{
+              legend: {
+                direction: "row",
+                position: { vertical: "bottom", horizontal: "middle" },
+                padding: 0,
+              },
+            }}
+          />
+        </div>
+      </div>
       <div className="bg-primary">Budget Category</div>
       <div className="bg-festive">Next to buy</div>
       <div className="bg-white">Text section</div>
