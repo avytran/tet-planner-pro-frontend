@@ -7,13 +7,14 @@ import { PieChart } from "@mui/x-charts/PieChart";
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel.jsx";
 import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
 import { Box, Typography } from "@mui/material";
-import { PencilIcon } from "@heroicons/react/24/outline";
+import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { LineChart } from "@mui/x-charts/LineChart";
+import CommonButton from "../../components/Button/CommonButton.jsx";
 
 export default function BudgetManagementPage() {
   const value = 6500000;
   const max = 10000000;
-  const percent = Math.round((value / max) * 100);
+  const percent = ((value / max) * 100).toFixed(2);
 
   const STATUS_CONFIG = {
     safe: {
@@ -67,6 +68,57 @@ export default function BudgetManagementPage() {
       price: 300000,
       quantity: 5,
       category: "Food",
+    },
+  ];
+
+  const categoriesData = [
+    {
+      name: "Food & Dining",
+      amountSpent: 6500000,
+      totalAmount: 7000000,
+      itemsCount: 12,
+    },
+    {
+      name: "Transportation",
+      amountSpent: 2000000,
+      totalAmount: 5000000,
+      itemsCount: 8,
+    },
+    {
+      name: "Housing",
+      amountSpent: 8000000,
+      totalAmount: 12000000,
+      itemsCount: 6,
+    },
+    {
+      name: "Utilities",
+      amountSpent: 1500000,
+      totalAmount: 3000000,
+      itemsCount: 4,
+    },
+    {
+      name: "Shopping",
+      amountSpent: 4500000,
+      totalAmount: 8000000,
+      itemsCount: 10,
+    },
+    {
+      name: "Entertainment",
+      amountSpent: 3500000,
+      totalAmount: 6000000,
+      itemsCount: 5,
+    },
+    {
+      name: "Travel",
+      amountSpent: 7000000,
+      totalAmount: 10000000,
+      itemsCount: 3,
+    },
+    {
+      name: "Health & Fitness",
+      amountSpent: 2500000,
+      totalAmount: 4000000,
+      itemsCount: 7,
     },
   ];
 
@@ -258,7 +310,34 @@ export default function BudgetManagementPage() {
           />
         </div>
       </div>
-      <div className="bg-primary">Budget Category</div>
+      <div className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative">
+        <h1 className="font-bold text-5xl text-white">Budget Cateogories</h1>
+        <p className="font-normal text-xl md:text-3xl text-left text-white">
+          Budget at a Glance
+        </p>
+        <CommonButton
+          leadingIcon={<PlusIcon className="h-5 w-5" />}
+          label={"Add item"}
+          onClick={() => alert("Button clicked!")}
+          color={"accent"}
+        />
+        <div
+          className="flex gap-7  overflow-x-auto py-5  [&::-webkit-scrollbar]:h-1
+  [&::-webkit-scrollbar-track]:bg-gray-100
+  [&::-webkit-scrollbar-thumb]:bg-gray-400
+  "
+        >
+          {categoriesData.map((category, index) => (
+            <BudgetCategoryCard
+              key={index}
+              category={category.name}
+              amountSpent={category.amountSpent}
+              totalAmount={category.totalAmount}
+              itemsCount={category.itemsCount}
+            />
+          ))}
+        </div>
+      </div>
       <div className="bg-festive">Next to buy</div>
       <div className="bg-white">Text section</div>
     </div>
