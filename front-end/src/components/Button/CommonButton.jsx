@@ -18,7 +18,7 @@ export default function CommonButton({
   return (
     <button
       type={type}
-      className={`font-normal text-white rounded-3xl flex py-3 px-4 justify-between gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
+      className={`w-fit font-normal text-white rounded-3xl flex py-3 px-5 justify-between gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
       onClick={onClick}
     >
       {leadingIcon}
