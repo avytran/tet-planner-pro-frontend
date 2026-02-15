@@ -339,7 +339,20 @@ export default function BudgetManagementPage() {
         </div>
       </div>
       <div className="bg-festive">Next to buy</div>
-      <div className="bg-white">Text section</div>
+      <div className="bg-white flex flex-col justify-center items-center gap-4 py-12 px-4  md:p-20 relative">
+        <div className="flex flex-col justify-center items-center gap-1">
+          <h2 className="font-bold text-accent">WITH LUCKY MONEY 🧧</h2>
+          <h1 className="font-bold text-5xl text-primary text-center">
+            Plan smart. Enjoy Tết fully.
+          </h1>
+        </div>
+
+        <p className="text-center text-base md:text-xl">
+          Managing your budget doesn’t mean cutting the fun — it means spending
+          with intention.  Track your shopping, stay aware of your limits, and
+          make room for what truly matters this Tết.
+        </p>
+      </div>
     </div>
   );
 }
