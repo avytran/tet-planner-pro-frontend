@@ -1,5 +1,15 @@
 @import "tailwindcss";
-
+@layer base {
+  #root,
+  html,
+  ul {
+    @apply [&::-webkit-scrollbar]:w-2;
+    @apply [&::-webkit-scrollbar-track]:bg-transparent;
+    @apply [&::-webkit-scrollbar-thumb]:bg-accent/70;
+    @apply [&::-webkit-scrollbar-thumb]:rounded-full;
+    @apply [&::-webkit-scrollbar-thumb:hover]:bg-accent/70;
+  }
+}
 @theme {
   --color-bg: var(--color-bg);
   --color-surface: var(--color-surface);
