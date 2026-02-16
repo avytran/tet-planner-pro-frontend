@@ -488,7 +488,7 @@ export default function BudgetManagementPage() {
       </>
       <>
         <div className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative">
-          <h1 className="font-bold text-5xl text-white">Budget Cateogories</h1>
+          <h1 className="font-bold text-5xl text-white">Budget Categories</h1>
           <p className="font-normal text-xl md:text-3xl text-left text-white">
             Budget at a Glance
           </p>
