@@ -1,4 +1,7 @@
 
-.container{
-    padding: calc(80px - 24px);
+.dashboard-container{
+    padding: 80px;
+    background: var(--color-bg);
+    /* width: 100%;
+    height: 100%; */
 }
