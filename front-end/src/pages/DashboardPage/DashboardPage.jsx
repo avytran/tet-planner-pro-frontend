@@ -2,6 +2,8 @@ import { Box, Typography } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
+import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
+import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 
 export default function DashboardPage() {
   const date = new Date();
@@ -11,22 +13,40 @@ export default function DashboardPage() {
     minute: '2-digit'
   });
 
-  const tasksRemain = 10;
-  const itemsRemain = 10;
-  const status = (tasksRemain, itemsRemain) => {
-    let result = [];
-    if (tasksRemain < 100) {
-      result.push("Completed...")
-    } else {
-      result.push("Completed!")
+  const tasksDone = 50;
+  const itemsDone = 60;
+  const budgetSpent = 80;
+  const status = (value) => value === 100 ? "Completed!" : "Completed...";
+  const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
+
+
+  const progressTaskColor = (tasksDone) => {
+    if (tasksDone === 0) {
+      return "#AEA9B1";
     }
 
-    if (itemsRemain < 80) {
-      result.push("Spent...")
-    } else if (itemsRemain >= 80) {
-      result.push("Spent!")
+    if (tasksDone >= 60) {
+      return "var(--color-success)";
     }
-    return result
+
+    return "var(--color-accent)";
+  };
+
+  const progressBudgetColor = (budgetSpent) => {
+    if (budgetSpent === 0) {
+      return "#AEA9B1";
+    }
+
+    if (budgetSpent === 100) {
+      return "var(--color-primary)";
+    }
+
+    if (budgetSpent >= 80) {
+      return "var(--color-accent)";
+    }
+
+
+    return "var(--color-success)";
   };
 
   return (
@@ -180,37 +200,131 @@ export default function DashboardPage() {
             </Box>
           </div>
         </div>
-        <div className="p-10 w-full md:w-sm bg-white rounded-3xl flex flex-col">
+        <div className="p-10 w-full md:w-sm bg-white rounded-3xl flex flex-col gap-y-9">
           <p className="text-2xl text-black font-semibold pb-[16px]">Progress</p>
           <div className="flex flex-col gap-9">
-            <div className="flex flex-col">
-              <div className="flex gap-x-2">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-6">
-                  <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
-                </svg>
-
-                <span className="font-normal text-xl text-black text-left">
-                  {tasksRemain}%
-                </span>
-                <p className="font-normal text-xl text-black text-left">Tasks {status(tasksRemain, itemsRemain)[0]}</p>
+            <div className="flex flex-row gap-2">
+              <div>
+                {
+                  tasksDone === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(tasksDone)} />
+                    : tasksDone === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(tasksDone)} />
+                      : <DotCircle fillColor={progressTaskColor(tasksDone)} fillBackground="none" />
+                }
               </div>
-              <Box sx={{ width: "100%", mr: 1 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={tasksRemain}
-                  sx={{
-                    height: 8,
-                    borderRadius: 5,
-                  }}
-                  color={
-                    tasksRemain > 50
-                      ? "error"
-                      : tasksRemain > 20 && tasksRemain < 50
-                        ? "warning"
-                        : "success"
-                  }
-                />
-              </Box>
+              <div className='flex-1'>
+                <div className="flex gap-2">
+                  <div className="progress-context flex flex-row gap-2 items-end">
+                    <span className="font-bold text-xl text-black text-left">
+                      {tasksDone}%
+                    </span>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Tasks {status(tasksDone)}</p>
+                  </div>
+                </div>
+                <Box sx={{ width: "100%", mr: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={tasksDone}
+                    sx={{
+                      height: 8,
+                      borderRadius: 5,
+
+                      [`& .${linearProgressClasses.bar}`]: {
+                        backgroundColor: progressTaskColor(tasksDone),
+                        borderRadius: 5,
+                      },
+
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(tasksDone)}, transparent 70%)`,
+                    }}
+                  />
+
+                </Box>
+              </div>
+            </div>
+
+          </div>
+          <div className="flex flex-col gap-9">
+            <div className="flex flex-row gap-2">
+              <div>
+                {
+                  itemsDone === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(itemsDone)} />
+                    : itemsDone === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(itemsDone)} />
+                      : <DotCircle fillColor={progressTaskColor(itemsDone)} fillBackground="none" />
+                }
+              </div>
+              <div className='flex-1'>
+                <div className="flex gap-2">
+                  <div className="progress-context flex flex-row gap-2 items-end">
+                    <span className="font-bold text-xl text-black text-left">
+                      {itemsDone}%
+                    </span>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Shopping Items {status(itemsDone)}</p>
+                  </div>
+                </div>
+                <Box sx={{ width: "100%", mr: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={itemsDone}
+                    sx={{
+                      height: 8,
+                      borderRadius: 5,
+
+                      [`& .${linearProgressClasses.bar}`]: {
+                        backgroundColor: progressTaskColor(itemsDone),
+                        borderRadius: 5,
+                      },
+
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(itemsDone)}, transparent 70%)`,
+                    }}
+                  />
+
+                </Box>
+              </div>
+            </div>
+
+          </div>
+          <div className="flex flex-col gap-9">
+            <div className="flex flex-row gap-2">
+              <div>
+                {
+                  budgetSpent === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressBudgetColor(budgetSpent)} />
+                    : budgetSpent >= 80
+                      ? <ExclamationCircle fillColor="white" fillBackground={progressBudgetColor(budgetSpent)} />
+                      : <DotCircle fillColor={progressBudgetColor(budgetSpent)} fillBackground="none" />
+                }
+              </div>
+              <div className='flex-1'>
+                <div className="flex gap-2">
+                  <div className="progress-context flex flex-row gap-2 items-end">
+                    <span className="font-bold text-xl text-black text-left">
+                      {budgetSpent}%
+                    </span>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Budget {statusBudget(budgetSpent)}</p>
+                  </div>
+                </div>
+                <Box sx={{ width: "100%", mr: 1 }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={budgetSpent}
+                    sx={{
+                      height: 8,
+                      borderRadius: 5,
+
+                      [`& .${linearProgressClasses.bar}`]: {
+                        backgroundColor: progressBudgetColor(budgetSpent),
+                        borderRadius: 5,
+                      },
+
+                      backgroundColor: `color-mix(in srgb, ${progressBudgetColor(budgetSpent)}, transparent 70%)`,
+                    }}
+                  />
+
+                </Box>
+              </div>
             </div>
 
           </div>
