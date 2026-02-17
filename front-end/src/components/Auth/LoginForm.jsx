@@ -8,6 +8,7 @@ import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
 
 
+
 export const LoginForm = () => {
   return (
     <div className="w-full max-w-5xl lg:max-w-6xl space-y-6 opacity-90">
@@ -38,7 +39,7 @@ export const LoginForm = () => {
                 icon={<TbLockPassword />}
               />
             <div className="flex items-center justify-between mt-10"> 
-              <a href="/forgot-password" className="body-link underline">Forgot your password?</a>
+              <Link to="/forgot-password" className="body-link underline">Forgot your password?</Link>
               <AuthButton type="submit" color="danger" label="Login"/>
             </div>
 
