@@ -43,7 +43,7 @@ export const ShoppingTable = ({ items = [] }) => {
                                 <th className="px-4 text-xs font-semibold text-white tracking-wider font-sans">Date</th>
                                 <th className="px-4 text-xs font-semibold text-white tracking-wider font-sans">Price</th>
                                 <th className="px-4 text-xs font-semibold text-white tracking-wider font-sans">Category</th>
-                                <th className="px-4 text-xs font-semibold text-white tracking-wider text-center font-sans">Qty</th>
+                                <th className="px-4 text-xs font-semibold text-white tracking-wider text-center font-sans">Quantity</th>
                                 <th className="px-4 text-xs font-semibold text-white tracking-wider font-sans">Status</th>
                             </tr>
                         </thead>
@@ -56,19 +56,19 @@ export const ShoppingTable = ({ items = [] }) => {
                                             ${index % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
                                     >
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans">{item.name}</span>
+                                            <span className="text-sm text-black font-sans font-light">{item.name}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans">{formatDate(item.dued_time)}</span>
+                                            <span className="text-sm text-black font-sans font-light">{formatDate(item.dued_time)}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans">{item.price?.toLocaleString('vi-VN')}</span>
+                                            <span className="text-sm text-black font-sans font-light">{item.price?.toLocaleString('en-US')}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans">{item.category}</span>
+                                            <span className="text-sm text-black font-sans font-light">{item.category}</span>
                                         </td>
                                         <td className="px-4 text-center">
-                                            <span className="text-sm text-black font-sans">{item.quantity}</span>
+                                            <span className="text-sm text-black font-sans font-light">{item.quantity}</span>
                                         </td>
                                         <td className="px-4">
                                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-sans ${getStatusBadgeStyle(item.status)}`}>
@@ -95,7 +95,7 @@ export const ShoppingTable = ({ items = [] }) => {
                     <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
-                        className="text-primary hover:text-primary-strong disabled:text-text-muted disabled:cursor-not-allowed font-sans text-sm"
+                        className="text-primary hover:text-primary-strong cursor-pointer disabled:text-text-muted disabled:opacity-50 disabled:cursor-not-allowed font-sans text-sm"
                     >
                         &lt;
                     </button>
@@ -103,7 +103,7 @@ export const ShoppingTable = ({ items = [] }) => {
                     <button
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
-                        className="text-primary hover:text-primary-strong disabled:text-text-muted disabled:cursor-not-allowed font-sans text-sm"
+                        className="text-primary hover:text-primary-strong cursor-pointer disabled:text-text-muted disabled:opacity-50 disabled:cursor-not-allowed font-sans text-sm"
                     >
                         &gt;
                     </button>
