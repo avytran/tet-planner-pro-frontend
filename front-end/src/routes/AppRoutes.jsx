@@ -11,6 +11,7 @@ import { LoginPage } from "../pages/LoginPage/LoginPage";
 import { SignupPage } from "../pages/SignupPage/SignupPage";
 import { ForgotPasswordPage } from "../pages/ForgotPassword/ForgotPasswordPage";
 import { EntercodePage } from "../pages/Entercode/EntercodePage";
+import { ResetPasswordPage } from "../pages/ResetPassword/ResetPasswordPage";
 
 export default function AppRoutes() {
   return (
@@ -28,6 +29,7 @@ export default function AppRoutes() {
         <Route path="sign-up" element={<SignupPage />} />
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="enter-code" element={<EntercodePage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
       </Route>
     </Routes>
   );
