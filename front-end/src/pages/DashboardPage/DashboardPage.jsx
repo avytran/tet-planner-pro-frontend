@@ -2,8 +2,10 @@ import { Box, Typography } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
+import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
 import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
+import { LineChart } from '@mui/x-charts/LineChart';
 
 export default function DashboardPage() {
   const date = new Date();
@@ -18,7 +20,6 @@ export default function DashboardPage() {
   const budgetSpent = 80;
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
-
 
   const progressTaskColor = (tasksDone) => {
     if (tasksDone === 0) {
@@ -55,8 +56,8 @@ export default function DashboardPage() {
         <p className="text-5xl font-semibold text-primary">Dashboard</p>
         <p className='text-black'>{time} - {dateArray.slice(1, dateArray.length - 1).join(" ")}, {dateArray[dateArray.length - 1]}</p>
       </div>
-      <div className="dashboard-1 flex flex-wrap flex-row justify-between gap-6 shrink-0">
-        <div className="p-10 w-full md:w-sm bg-white rounded-3xl flex flex-col">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 content-center">
+        <div className="p-10 w-full bg-white rounded-3xl flex flex-col">
           <p className="text-2xl text-black font-semibold pb-[16px]">Todo Tasks</p>
           <div className="dashboard-chart">
             <Box
@@ -128,7 +129,7 @@ export default function DashboardPage() {
             </Box>
           </div>
         </div>
-        <div className="p-10 w-full md:w-sm bg-white rounded-3xl flex flex-col">
+        <div className="p-10 w-full bg-white rounded-3xl flex flex-col">
           <p className="text-2xl text-black font-semibold pb-[16px]">Shopping Items</p>
           <div className="dashboard-chart">
             <Box
@@ -200,7 +201,7 @@ export default function DashboardPage() {
             </Box>
           </div>
         </div>
-        <div className="p-10 w-full md:w-sm bg-white rounded-3xl flex flex-col gap-y-9">
+        <div className="p-10 w-full bg-white rounded-3xl flex flex-col gap-y-9">
           <p className="text-2xl text-black font-semibold pb-[16px]">Progress</p>
           <div className="flex flex-col gap-9">
             <div className="flex flex-row gap-2">
@@ -329,10 +330,58 @@ export default function DashboardPage() {
 
           </div>
         </div>
-      </div>
-      <div className="dashboard-2">
+        <div class="lg:col-span-2 p-10 w-full bg-white rounded-3xl flex flex-col">
+          <p className="text-2xl text-black font-semibold pb-[16px]">Spending Timeline</p>
+          <LineChart
+            series={[
+              { curve: "linear", color: 'var(--color-success)', data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5], label: 'Food' },
+              { curve: "linear", color: 'var(--color-danger)', data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3], label: 'Decoration' },
+              { curve: "linear", color: 'var(--color-accent)', data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4], label: 'Cloths' },
+              { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
+            ]}
+            height={300}
 
+            slotProps={{
+              legend: {
+                direction: 'row',
+                position: { vertical: 'bottom', horizontal: 'middle' },
+                padding: 0,
+              },
+            }}
+          />
+        </div>
+        <div class="p-10 w-full bg-white rounded-3xl flex flex-col gap-y-4">
+          <p className="text-2xl text-black font-semibold pb-[16px]">Category Distribution</p>
+          <PieChart
+            series={[
+              {
+                innerRadius: 50,
+                outerRadius: 100,
+                data: [
+                  { value: 30, color: 'var(--color-accent)', label: 'Food' },
+                  { value: 30, color: 'var(--color-danger)', label: 'Decoration' },
+                  { value: 40, color: 'var(--color-primary)', label: 'Others' },
+                ],
+                valueFormatter: (item) => `${item.value}%`,
+                highlightScope: { fade: 'global', highlight: 'item' },
+                faded: { innerRadius: 30, additionalRadius: -10 },
+              },
+            ]}
+            height={200}
+            width={200}
+          >
+            {/* <PieCenterLabel color="var(--color-primary)" fontSize={13}>
+              Categories
+            </PieCenterLabel> */}
+          </PieChart>
 
+          <div
+            className={`px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col`}
+          >
+            <p className={`text-base font-semibold text-white`}>Notification</p>
+            <p className={`text-base font-light text-left text-white`}>You have 2 tasks, 3 items to do today.</p>
+          </div>
+        </div>
       </div>
     </div>
   );
