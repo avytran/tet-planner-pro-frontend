@@ -60,10 +60,17 @@ const graphqlRequest = async (query, variables = {}, token = null) => {
 
     return data;
   } catch (error) {
-    if (error.response?.data?.errors) {
-      const graphqlError = new Error(error.response.data.errors[0].message);
-      graphqlError.graphqlErrors = error.response.data.errors;
-      throw graphqlError;
+    if (error.response?.data) {
+      // Handle GraphQL errors
+      if (error.response.data.errors) {
+        const graphqlError = new Error(error.response.data.errors[0].message);
+        graphqlError.graphqlErrors = error.response.data.errors;
+        graphqlError.response = error.response; 
+        throw graphqlError;
+      }
+      // Preserve response data for validation errors (message array)
+      // The error object will have access to error.response.data.message
+      error.response = error.response;
     }
     throw error;
   }
@@ -159,7 +166,31 @@ export const AuthApi = {
         url: GRAPHQL_URL,
         message: error.message,
         graphqlErrors: error.graphqlErrors,
+        response: error.response?.data,
       });
+      
+      // If GraphQL error message contains nested JSON (Backend error format)
+      if (error.graphqlErrors && error.graphqlErrors.length > 0) {
+        const graphqlMessage = error.graphqlErrors[0].message;
+        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
+          try {
+            const jsonMatch = graphqlMessage.match(/\{.*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
+                // Create new error with extracted message
+                const extractedError = new Error(parsed.message[0]);
+                extractedError.response = error.response;
+                extractedError.graphqlErrors = error.graphqlErrors;
+                throw extractedError;
+              }
+            }
+          } catch (parseError) {
+            // If parsing fails, continue with original error
+          }
+        }
+      }
+      
       throw error;
     }
   },
