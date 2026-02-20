@@ -8,6 +8,7 @@ export default function AuthButton({
   onClick,
   type = "button",
   className = "",
+  disabled = false,
 }) {
   const colorClasses = {
     accent: "bg-accent hover:bg-accent-soft",
@@ -18,7 +19,8 @@ export default function AuthButton({
   return (
     <button
       type={type}
-      className={`font-normal text-white rounded-2xl flex py-2 px-8 justify-between gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
+      disabled={disabled}
+      className={`font-normal text-white rounded-2xl flex py-2 px-8 justify-between gap-2 items-center transition duration-300 ${colorClasses[color]} ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
       onClick={onClick}
     >
       {leadingIcon}

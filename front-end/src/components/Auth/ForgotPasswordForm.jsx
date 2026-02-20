@@ -12,7 +12,7 @@ export const ForgotPasswordForm = () => {
         <h1 className="font-bold text-primary-strong text-center text-5xl">
           FORGOT PASSWORD
         </h1>
-        <p className="text-center font-body-strong text-black">Enter your email address and we will send you a code to reset your password</p>
+        <p className="text-center font-body-strong text-black">Enter your email address and we will send you a link to reset your password</p>
       </div>
 
       <form className="space-y-4 w-1/3 mx-auto">
