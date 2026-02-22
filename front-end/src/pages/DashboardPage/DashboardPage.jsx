@@ -355,7 +355,7 @@ export default function DashboardPage() {
           <PieChart
             series={[
               {
-                innerRadius: 50,
+                innerRadius: 40,
                 outerRadius: 100,
                 data: [
                   { value: 30, color: 'var(--color-accent)', label: 'Food' },
@@ -369,6 +369,13 @@ export default function DashboardPage() {
             ]}
             height={200}
             width={200}
+            slotProps={{
+              legend: {
+                direction: 'horizontal',
+                position: { vertical: 'bottom', horizontal: 'center' },
+                padding: 0,
+              },
+            }}
           >
             {/* <PieCenterLabel color="var(--color-primary)" fontSize={13}>
               Categories
