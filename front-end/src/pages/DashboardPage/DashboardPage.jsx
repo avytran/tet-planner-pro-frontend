@@ -112,8 +112,8 @@ export default function DashboardPage() {
                 }}
                 slotProps={{
                   legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    direction: 'horizontal',
+                    position: { vertical: 'bottom', horizontal: 'center' },
                     padding: 0,
                   },
                 }}
@@ -184,8 +184,8 @@ export default function DashboardPage() {
                 }}
                 slotProps={{
                   legend: {
-                    direction: 'row',
-                    position: { vertical: 'bottom', horizontal: 'middle' },
+                    direction: 'horizontal',
+                    position: { vertical: 'bottom', horizontal: 'center' },
                     padding: 0,
                   },
                 }}
@@ -343,8 +343,8 @@ export default function DashboardPage() {
 
             slotProps={{
               legend: {
-                direction: 'row',
-                position: { vertical: 'bottom', horizontal: 'middle' },
+                direction: 'horizontal',
+                position: { vertical: 'bottom', horizontal: 'center' },
                 padding: 0,
               },
             }}
@@ -376,10 +376,10 @@ export default function DashboardPage() {
           </PieChart>
 
           <div
-            className={`px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col`}
+            className={"px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col"}
           >
-            <p className={`text-base font-semibold text-white`}>Notification</p>
-            <p className={`text-base font-light text-left text-white`}>You have 2 tasks, 3 items to do today.</p>
+            <p className={"text-base font-semibold text-white"}>Notification</p>
+            <p className={"text-base font-light text-left text-white"}>You have 2 tasks, 3 items to do today.</p>
           </div>
         </div>
       </div>
