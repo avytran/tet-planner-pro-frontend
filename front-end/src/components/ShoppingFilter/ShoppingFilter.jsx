@@ -31,7 +31,7 @@ export const ShoppingFilter = ({
     const MAX_PRICE_LIMIT = 5000000; 
     
     const formatPrice = (value) => {
-        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     };
     
     const handleSliderChange = (e, type) => {
