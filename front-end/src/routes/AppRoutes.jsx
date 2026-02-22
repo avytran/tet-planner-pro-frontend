@@ -6,6 +6,7 @@ import TaskManagementPage from "../pages/TaskManagementPage";
 import BudgetManagementPage from "../pages/BudgetManagementPage";
 import ShoppingListPage from "../pages/ShoppingListPage";
 import AboutPage from "../pages/AboutPage";
+import { ExamplePage } from "../pages/ExamplePage/ExamplePage";
 
 export default function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export default function AppRoutes() {
         <Route path="budget-management" element={<BudgetManagementPage />} />
         <Route path="shopping-list" element={<ShoppingListPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="example" element={<ExamplePage />} />
       </Route>
     </Routes>
   );
