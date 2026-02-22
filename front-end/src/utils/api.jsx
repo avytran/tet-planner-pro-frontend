@@ -61,15 +61,12 @@ const graphqlRequest = async (query, variables = {}, token = null) => {
     return data;
   } catch (error) {
     if (error.response?.data) {
-      // Handle GraphQL errors
       if (error.response.data.errors) {
         const graphqlError = new Error(error.response.data.errors[0].message);
         graphqlError.graphqlErrors = error.response.data.errors;
         graphqlError.response = error.response; 
         throw graphqlError;
       }
-      // Preserve response data for validation errors (message array)
-      // The error object will have access to error.response.data.message
       error.response = error.response;
     }
     throw error;
@@ -119,6 +116,14 @@ const GET_PROFILE_QUERY = `
       fullName
       createdAt
       updatedAt
+    }
+  }
+`;
+
+const FORGOT_PASSWORD_MUTATION = `
+  mutation ForgotPassword($input: ForgotPasswordInput!) {
+    forgotPassword(input: $input) {
+      message
     }
   }
 `;
@@ -186,7 +191,6 @@ export const AuthApi = {
               }
             }
           } catch (parseError) {
-            // If parsing fails, continue with original error
           }
         }
       }
@@ -237,6 +241,46 @@ export const AuthApi = {
         message: error.message,
         graphqlErrors: error.graphqlErrors,
       });
+      throw error;
+    }
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      const data = await graphqlRequest(FORGOT_PASSWORD_MUTATION, {
+        input: {
+          email,
+        },
+      });
+
+      return data.forgotPassword;
+    } catch (error) {
+      console.error("Forgot Password API Error:", {
+        url: GRAPHQL_URL,
+        message: error.message,
+        graphqlErrors: error.graphqlErrors,
+        response: error.response?.data,
+      });
+      
+      if (error.graphqlErrors && error.graphqlErrors.length > 0) {
+        const graphqlMessage = error.graphqlErrors[0].message;
+        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
+          try {
+            const jsonMatch = graphqlMessage.match(/\{.*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
+                const extractedError = new Error(parsed.message[0]);
+                extractedError.response = error.response;
+                extractedError.graphqlErrors = error.graphqlErrors;
+                throw extractedError;
+              }
+            }
+          } catch (parseError) {
+          }
+        }
+      }
+      
       throw error;
     }
   },
