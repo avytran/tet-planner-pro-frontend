@@ -2,8 +2,8 @@ import React from "react";
 
 /**
  * 
- * @param {string} fill - hex color or var color
- * @param {string} className - ex: size-6
+ * @param {string} fillColor - hex color or var color
+ * @param {string} fillBackground - hex color or var color
  * @returns 
  */
 
