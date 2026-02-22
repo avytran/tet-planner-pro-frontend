@@ -128,6 +128,14 @@ const FORGOT_PASSWORD_MUTATION = `
   }
 `;
 
+const RESET_PASSWORD_MUTATION = `
+  mutation ResetPassword($input: ResetPasswordInput!) {
+    resetPassword(input: $input) {
+      message
+    }
+  }
+`;
+
 export const AuthApi = {
   login: async (email, password) => {
     try {
@@ -174,7 +182,6 @@ export const AuthApi = {
         response: error.response?.data,
       });
       
-      // If GraphQL error message contains nested JSON (Backend error format)
       if (error.graphqlErrors && error.graphqlErrors.length > 0) {
         const graphqlMessage = error.graphqlErrors[0].message;
         if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
@@ -183,7 +190,6 @@ export const AuthApi = {
             if (jsonMatch) {
               const parsed = JSON.parse(jsonMatch[0]);
               if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-                // Create new error with extracted message
                 const extractedError = new Error(parsed.message[0]);
                 extractedError.response = error.response;
                 extractedError.graphqlErrors = error.graphqlErrors;
@@ -277,6 +283,53 @@ export const AuthApi = {
               }
             }
           } catch (parseError) {
+          }
+        }
+      }
+      
+      throw error;
+    }
+  },
+
+  resetPassword: async (token, newPassword) => {
+    try {
+      const data = await graphqlRequest(RESET_PASSWORD_MUTATION, {
+        input: {
+          token,
+          newPassword,
+        },
+      });
+
+      return data.resetPassword;
+    } catch (error) {
+      console.error("Reset Password API Error:", {
+        url: GRAPHQL_URL,
+        message: error.message,
+        graphqlErrors: error.graphqlErrors,
+        response: error.response?.data,
+      });
+      
+      if (error.graphqlErrors && error.graphqlErrors.length > 0) {
+        const graphqlMessage = error.graphqlErrors[0].message;
+        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
+          try {
+            const jsonMatch = graphqlMessage.match(/\{.*\}/);
+            if (jsonMatch) {
+              const parsed = JSON.parse(jsonMatch[0]);
+              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
+                const extractedError = new Error(parsed.message[0]);
+                extractedError.response = error.response;
+                extractedError.graphqlErrors = error.graphqlErrors;
+                throw extractedError;
+              } else if (parsed.message && typeof parsed.message === 'string') {
+                const extractedError = new Error(parsed.message);
+                extractedError.response = error.response;
+                extractedError.graphqlErrors = error.graphqlErrors;
+                throw extractedError;
+              }
+            }
+          } catch (parseError) {
+            
           }
         }
       }
