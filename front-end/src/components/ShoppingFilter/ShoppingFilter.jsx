@@ -7,9 +7,9 @@ const FILTER_OPTS = {
     ],
     
     timeline: [
-        { label: "Before Tet", value: "Before Tet" },
-        { label: "30 Tet", value: "30 Tet" },
-        { label: "Mung 1-3", value: "Mung 1-3" }
+        { label: "Pre Tet", value: "Pre Tet" },
+        { label: "During Tet", value: "During Tet" },
+        { label: "After Tet", value: "After Tet" }
     ]
 };
 
@@ -49,7 +49,7 @@ export const ShoppingFilter = ({
     const getPercent = (value) => Math.round(((value) / MAX_PRICE_LIMIT) * 100);
     
     return (
-        <div className="w-full md:w-[175px] shrink-0 text-left">
+        <div className="w-full md:w-[220px] shrink-0 text-left rounded-xl p-4 shadow-md border border-gray-200 bg-surface">
             {/* HEADER */}
             <div className="flex items-center gap-2 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary-strong" fill="none" viewBox="0 0 24 24" stroke="currentColor">

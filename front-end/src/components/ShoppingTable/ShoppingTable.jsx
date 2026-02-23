@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const ShoppingTable = ({ items = [] }) => {
+export const ShoppingTable = ({ items = [], onRowClick }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ITEMS_PER_PAGE = 10;
     
@@ -31,10 +31,10 @@ export const ShoppingTable = ({ items = [] }) => {
         }
     };
     
-    return (
+    return ( 
         <div className="flex-1 w-full">
             {/* Table */}
-            <div className="bg-surface rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+            <div className="bg-surface rounded-xl overflow-hidden border border-gray-200 shadow-md">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[698px]">
                         <thead>
@@ -49,12 +49,12 @@ export const ShoppingTable = ({ items = [] }) => {
                         </thead>
                         <tbody>
                             {paginatedItems.length > 0 ? (
-                                paginatedItems.map((item, index) => (
+                                paginatedItems.map((item, index) => ( 
                                     <tr 
                                         key={item.id} 
-                                        className={`border-b border-festive/20 hover:bg-festive/10 transition-colors h-[48px]
-                                            ${index % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
-                                    >
+                                        className={`border-b border-festive/20 hover:bg-festive/10 transition-colors h-[48px] ${onRowClick ? "hover:bg-orange-50 cursor-pointer transition" : ""} ${index % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
+                                        onClick={() => onRowClick && onRowClick(index)}
+                                    > 
                                         <td className="px-4">
                                             <span className="text-sm text-black font-sans font-light">{item.name}</span>
                                         </td>
