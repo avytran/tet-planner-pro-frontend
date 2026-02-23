@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation } from "@apollo/client/react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardSection } from "./Card";
@@ -9,6 +11,7 @@ import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { LOGIN } from "@/graphql/mutations/auth.mutation";
+import { loginSchema } from "@/schemas/login.schema";
 
 export const LoginForm = () => {
   const navigate = useNavigate();
@@ -16,16 +19,21 @@ export const LoginForm = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema)
+  })
+
   const [login, { loading }] = useMutation(LOGIN);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (formData) => {
     setError("");
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get("email");
-      const password = formData.get("password");
+      const { email, password } =  formData;
 
       const { data } = await login({
         variables: {
@@ -68,21 +76,21 @@ export const LoginForm = () => {
             </h1>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            {/* Email */}
             <InputField
               icon={<FaRegUserCircle />}
               label="Email"
-              name="email"
-              type="email"
               placeholder="m@example.com"
               required
               disabled={loading}
+              error={errors.email?.message}
+              {...register("email")}
             />
 
+            {/* Password */}
             <InputField
               label="Password"
-              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               required
@@ -90,7 +98,11 @@ export const LoginForm = () => {
               disabled={loading}
               rightIcon={showPassword ? <FaEyeSlash /> : <FaEye />}
               onRightIconClick={() => setShowPassword(!showPassword)}
+              error={errors.password?.message}
+              {...register("password")}
             />
+
+            {/* Server error */}
             {error && (
               <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
                 <span className="block sm:inline">{error}</span>

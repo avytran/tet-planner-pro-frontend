@@ -1,15 +1,16 @@
-import React from "react";
+import React, { forwardRef } from "react";
 
-export const InputField = ({
+export const InputField = forwardRef(({
   label,
   icon,
   rightIcon,
-  onRightIconClick, 
+  onRightIconClick,
   name,
   type = "text",
   placeholder,
+  error,
   ...props
-}) => {
+}, ref) => {
   return (
     <div className="space-y-1 mb-8">
       {label && (
@@ -24,6 +25,7 @@ export const InputField = ({
 
         {icon && <span className="text-primary-strong text-lg w-10 h-10 flex items-center justify-center">{icon}</span>}
         <input
+          ref={ref}
           id={name}
           name={name}
           type={type}
@@ -42,7 +44,11 @@ export const InputField = ({
           </button>
         )}
       </div>
-
+        {error && (
+          <p className="text-red-500 text-sm mt-1">{error}</p>
+        )}
     </div>
   );
-};
+});
+
+InputField.displayName = "InputField";
