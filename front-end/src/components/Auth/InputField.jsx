@@ -3,6 +3,8 @@ import React from "react";
 export const InputField = ({
   label,
   icon,
+  rightIcon,
+  onRightIconClick, 
   name,
   type = "text",
   placeholder,
@@ -22,15 +24,25 @@ export const InputField = ({
 
         {icon && <span className="text-primary-strong text-lg w-10 h-10 flex items-center justify-center">{icon}</span>}
         <input
-        id={name}
-        name={name}
-        type={type}
-        placeholder={placeholder}
-        className="font-normal text-black w-full border-neutral-300 px-3 py-2 text-sm outline-none focus:ring-0 focus:outline-none focus:border-black "
-        {...props}
-      />
+          id={name}
+          name={name}
+          type={type}
+          placeholder={placeholder}
+          className="font-normal text-black w-full border-neutral-300 px-3 py-2 text-sm outline-none focus:ring-0 focus:outline-none focus:border-black "
+          {...props}
+        />
+
+        {rightIcon && (
+          <button
+            type="button"
+            onClick={onRightIconClick}
+            className="text-gray-500 hover:text-black w-10 h-10 flex items-center justify-center"
+          >
+            {rightIcon}
+          </button>
+        )}
       </div>
-      
+
     </div>
   );
 };
