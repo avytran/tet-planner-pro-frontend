@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import { useMutation } from "@apollo/client/react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardSection } from "./Card";
@@ -10,6 +12,7 @@ import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { REGISTER } from "@/graphql/mutations/auth.mutation";
+import { signupSchema } from "@/schemas/signup.schema";
 
 export const SignupForm = () => {
   const navigate = useNavigate();
@@ -18,19 +21,23 @@ export const SignupForm = () => {
   const [success, setSuccess] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [register, { loading }] = useMutation(REGISTER);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(signupSchema)
+  })
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const [registerUser, { loading }] = useMutation(REGISTER);
+
+  const onSubmit = async (formData) => {
     setError("");
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const email = formData.get("email");
-      const fullName = formData.get("name");
-      const password = formData.get("password");
+      const { email, fullName, password } = formData;
 
-      const { data } = await register({
+      const { data } = await registerUser({
         variables: {
           input: {
             email,
@@ -48,9 +55,6 @@ export const SignupForm = () => {
         navigate("/login");
       }, 1500);
     } catch (err) {
-      console.error("Register error:", err);
-      console.error("Register error response:", err.response?.data);
-
       let message = "Registration failed. Please try again.";
 
       const graphQLError = err?.errors?.[0]?.message;
@@ -77,31 +81,33 @@ export const SignupForm = () => {
             </h1>
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            {/* Email */}
             <InputField
               icon={<FaRegUserCircle />}
               label="Email"
-              name="email"
               type="email"
               placeholder="m@example.com"
               required
               disabled={loading}
+              error={errors.email?.message}
+              {...register("email")}
             />
 
+            {/* Full Name */}
             <InputField
               icon={<ImProfile />}
               label="Name"
-              name="name"
               type="text"
               placeholder="Nguyen Van A"
               required
               disabled={loading}
+              error={errors.name?.message}
+              {...register("fullName")}
             />
 
             <InputField
               label="Password"
-              name="password"
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               required
@@ -109,6 +115,8 @@ export const SignupForm = () => {
               disabled={loading}
               rightIcon={showPassword ? <FaEyeSlash /> : <FaEye />}
               onRightIconClick={() => setShowPassword(!showPassword)}
+              error={errors.password?.message}
+              {...register("password")}
             />
 
             {success && (
