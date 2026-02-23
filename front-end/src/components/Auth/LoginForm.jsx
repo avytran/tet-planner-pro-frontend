@@ -8,7 +8,6 @@ import { TbLockPassword } from "react-icons/tb";
 import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { AuthApi } from "../../utils/api";
 import { LOGIN } from "@/graphql/mutations/auth.mutation";
 
 export const LoginForm = () => {
@@ -17,7 +16,7 @@ export const LoginForm = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [login, { data, loading }] = useMutation(LOGIN);
+  const [login, { loading }] = useMutation(LOGIN);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,14 +27,15 @@ export const LoginForm = () => {
       const email = formData.get("email");
       const password = formData.get("password");
 
-      await login({
+      const { data } = await login({
         variables: {
           input: { email, password },
         },
       });
 
-      if (data?.login?.accessToken) {
+      if (data?.login?.accessToken && data?.login?.refreshToken) {
         localStorage.setItem("accessToken", data.login.accessToken);
+        localStorage.setItem("refreshToken", data.login.refreshToken);
         navigate("/");
       }
 
