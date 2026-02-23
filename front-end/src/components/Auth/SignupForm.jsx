@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useMutation } from "@apollo/client/react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardSection } from "./Card";
 import { InputField } from "./InputField";
@@ -7,127 +8,62 @@ import { TbLockPassword } from "react-icons/tb";
 import { ImProfile } from "react-icons/im";
 import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
-import { AuthApi } from "../../utils/api";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { REGISTER } from "@/graphql/mutations/auth.mutation";
 
 export const SignupForm = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  const [register, { loading }] = useMutation(REGISTER);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
 
     try {
       const formData = new FormData(e.currentTarget);
       const email = formData.get("email");
-      const fullName = formData.get("name"); 
+      const fullName = formData.get("name");
       const password = formData.get("password");
 
-      const response = await AuthApi.register(fullName, email, password);
+      const { data } = await register({
+        variables: {
+          input: {
+            email,
+            fullName,
+            password,
+          },
+        },
+      });
 
-      if (response && (response.id || response.email)) {
+      if (data.register) {
         setSuccess("Created a new account successfully! Please login to continue.");
-      } else {
-        setError("Email already exists");
       }
+
       setTimeout(() => {
         navigate("/login");
       }, 1500);
     } catch (err) {
       console.error("Register error:", err);
       console.error("Register error response:", err.response?.data);
-      
-      let errorMessage = "Registration failed. Please try again.";
-      
-      if (err.response?.data?.message) {
-        const message = err.response.data.message;
-        if (Array.isArray(message) && message.length > 0) {
-          errorMessage = message[0].charAt(0).toUpperCase() + message[0].slice(1);
-        } else if (typeof message === 'string') {
-          errorMessage = message;
+
+      let message = "Registration failed. Please try again.";
+
+      const graphQLError = err?.errors?.[0]?.message;
+
+      if (graphQLError) {
+        if (graphQLError.includes("exists")) {
+          message = "Email already exists.";
         }
+      } else if (err.networkError) {
+        message = "Server error. Please try again.";
       }
-      else if (err.graphqlErrors && err.graphqlErrors.length > 0) {
-        const graphqlMessage = err.graphqlErrors[0].message;
-        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
-          try {
-            const jsonMatch = graphqlMessage.match(/\{.*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-                errorMessage = parsed.message[0].charAt(0).toUpperCase() + parsed.message[0].slice(1);
-              } else if (parsed.message && typeof parsed.message === 'string') {
-                errorMessage = parsed.message;
-              } else {
-                errorMessage = graphqlMessage;
-              }
-            } else {
-              errorMessage = graphqlMessage;
-            }
-          } catch {
-            errorMessage = graphqlMessage;
-          }
-        } else {
-          errorMessage = graphqlMessage;
-        }
-      }
-      else if (err.response?.data?.errors) {
-        const graphqlMessage = err.response.data.errors[0].message;
-        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
-          try {
-            const jsonMatch = graphqlMessage.match(/\{.*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-                errorMessage = parsed.message[0].charAt(0).toUpperCase() + parsed.message[0].slice(1);
-              } else if (parsed.message && typeof parsed.message === 'string') {
-                errorMessage = parsed.message;
-              } else {
-                errorMessage = graphqlMessage;
-              }
-            } else {
-              errorMessage = graphqlMessage;
-            }
-          } catch {
-            errorMessage = graphqlMessage;
-          }
-        } else {
-          errorMessage = graphqlMessage;
-        }
-      } 
-      else if (err.response) {
-        errorMessage = 
-          err.response.data?.error ||
-          `Server error: ${err.response.status} ${err.response.statusText}`;
-      } 
-      else if (err.request) {
-        errorMessage = "No response from server. Please check if the server is running.";
-      } 
-      else if (err.message) {
-        try {
-          const jsonMatch = err.message.match(/\{.*\}/);
-          if (jsonMatch) {
-            const parsed = JSON.parse(jsonMatch[0]);
-            if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-              errorMessage = parsed.message[0].charAt(0).toUpperCase() + parsed.message[0].slice(1);
-            } else if (parsed.message && typeof parsed.message === 'string') {
-              errorMessage = parsed.message;
-            } else {
-              errorMessage = err.message;
-            }
-          } else {
-            errorMessage = err.message;
-          }
-        } catch {
-          errorMessage = err.message;
-        }
-      }
-      
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+
+      setError(message);
     }
   };
 
@@ -150,9 +86,9 @@ export const SignupForm = () => {
               type="email"
               placeholder="m@example.com"
               required
-              disabled={isLoading}
+              disabled={loading}
             />
-            
+
             <InputField
               icon={<ImProfile />}
               label="Name"
@@ -160,19 +96,21 @@ export const SignupForm = () => {
               type="text"
               placeholder="Nguyen Van A"
               required
-              disabled={isLoading}
+              disabled={loading}
             />
-            
+
             <InputField
               label="Password"
               name="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               required
               icon={<TbLockPassword />}
-              disabled={isLoading}
+              disabled={loading}
+              rightIcon={showPassword ? <FaEyeSlash /> : <FaEye />}
+              onRightIconClick={() => setShowPassword(!showPassword)}
             />
-            
+
             {success && (
               <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
                 <span className="block sm:inline">{success}</span>
@@ -183,13 +121,13 @@ export const SignupForm = () => {
                 <span className="block sm:inline">{error}</span>
               </div>
             )}
-            
-            <div className="flex items-center justify-center"> 
-              <AuthButton 
-                type="submit" 
-                color="danger" 
-                label={isLoading ? "Signing up..." : "Sign Up"}
-                disabled={isLoading}
+
+            <div className="flex items-center justify-center">
+              <AuthButton
+                type="submit"
+                color="danger"
+                label={loading ? "Signing up..." : "Sign Up"}
+                disabled={loading}
               />
             </div>
 
