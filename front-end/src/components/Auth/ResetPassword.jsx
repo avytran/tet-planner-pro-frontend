@@ -1,19 +1,32 @@
 import { useState, useEffect } from "react";
+import { useMutation } from "@apollo/client/react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Card } from "./Card";
 import { InputField } from "./InputField";
 import { TbLockPassword } from "react-icons/tb";
 import AuthButton from "./Button";
-import { AuthApi } from "../../utils/api";
+import { RESET_PASSWORD } from "@/graphql/mutations/auth.mutation";
+import { useForm } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { resetPasswordSchema } from "@/schemas/login.schema";
 
 export const ResetPasswordForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
   
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(resetPasswordSchema),
+  });
+
+  const [resetPassword, { loading }] = useMutation(RESET_PASSWORD);
 
   useEffect(() => {
     if (!token) {
@@ -21,38 +34,27 @@ export const ResetPasswordForm = () => {
     }
   }, [token]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const onSubmit = async (formData) => {
     if (!token) {
-      setError("Invalid reset link. Please request a new password reset.");
       return;
     }
 
     setError("");
     setSuccess("");
-    setIsLoading(true);
 
     try {
-      const formData = new FormData(e.currentTarget);
-      const newPassword = formData.get("password");
-      const confirmPassword = formData.get("confirmPassword");
+      const { newPassword } = formData;
 
-      if (newPassword !== confirmPassword) {
-        setError("Passwords do not match");
-        setIsLoading(false);
-        return;
-      }
+      const { data } = await resetPassword({
+        variables: {
+          input: {
+            token, 
+            newPassword,
+          }
+        }
+      });
 
-      if (newPassword.length < 8) {
-        setError("Password must be at least 8 characters long");
-        setIsLoading(false);
-        return;
-      }
-
-      const response = await AuthApi.resetPassword(token, newPassword);
-
-      if (response && response.message) {
+      if (data.resetPassword?.message) {
         setSuccess("Password reset successfully! Redirecting to login...");
         setTimeout(() => {
           navigate("/login");
@@ -61,69 +63,15 @@ export const ResetPasswordForm = () => {
         setError("Failed to reset password. Please try again.");
       }
     } catch (err) {
-      console.error("Reset Password error:", err);
-      
-      let errorMessage = "Failed to reset password. Please try again.";
-      
-      if (err.graphqlErrors && err.graphqlErrors.length > 0) {
-        const graphqlMessage = err.graphqlErrors[0].message;
-        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
-          try {
-            const jsonMatch = graphqlMessage.match(/\{.*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-                errorMessage = parsed.message[0].charAt(0).toUpperCase() + parsed.message[0].slice(1);
-              } else if (parsed.message && typeof parsed.message === 'string') {
-                errorMessage = parsed.message;
-              } else {
-                errorMessage = graphqlMessage;
-              }
-            } else {
-              errorMessage = graphqlMessage;
-            }
-          } catch {
-            errorMessage = graphqlMessage;
-          }
-        } else {
-          errorMessage = graphqlMessage;
-        }
-      } else if (err.response?.data?.errors) {
-        const graphqlMessage = err.response.data.errors[0].message;
-        if (graphqlMessage.includes('Backend error') && graphqlMessage.includes('{')) {
-          try {
-            const jsonMatch = graphqlMessage.match(/\{.*\}/);
-            if (jsonMatch) {
-              const parsed = JSON.parse(jsonMatch[0]);
-              if (parsed.message && Array.isArray(parsed.message) && parsed.message.length > 0) {
-                errorMessage = parsed.message[0].charAt(0).toUpperCase() + parsed.message[0].slice(1);
-              } else if (parsed.message && typeof parsed.message === 'string') {
-                errorMessage = parsed.message;
-              } else {
-                errorMessage = graphqlMessage;
-              }
-            } else {
-              errorMessage = graphqlMessage;
-            }
-          } catch {
-            errorMessage = graphqlMessage;
-          }
-        } else {
-          errorMessage = graphqlMessage;
-        }
-      } else if (err.response) {
-        errorMessage = 
-          err.response.data?.error ||
-          `Server error: ${err.response.status} ${err.response.statusText}`;
-      } else if (err.request) {
-        errorMessage = "No response from server. Please check if the server is running.";
-      } else {
-        errorMessage = err.message || errorMessage;
+      let message = "Failed to reset password. Please try again.";
+
+      if (err.graphqlErrors?.length) {
+        message = err.graphqlErrors[0].message;
+      } else if (err.networkError) {
+        message = "Server error. Please try again.";
       }
-      
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+
+      setError(message);
     }
   };
 
@@ -136,24 +84,26 @@ export const ResetPasswordForm = () => {
         <p className="text-center font-body-strong text-black">What would you like your new password to be?</p>
       </div>
 
-      <form className="space-y-4 w-1/3 mx-auto" onSubmit={handleSubmit}>
+      <form className="space-y-4 w-1/3 mx-auto" onSubmit={handleSubmit(onSubmit)}>
         <InputField
           icon={<TbLockPassword />}
           label="New Password"
-          name="password"
           type="password"
           placeholder="••••••••"
           required
-          disabled={isLoading || !token}
+          disabled={loading || !token}
+          error={errors.newPassword?.message}x
+          {...register("newPassword")}
         />
         <InputField
           icon={<TbLockPassword />}
           label="Confirm Password"
-          name="confirmPassword"
           type="password"
           placeholder="••••••••"
           required
-          disabled={isLoading || !token}
+          disabled={loading || !token}
+          error={errors.confirmPassword?.message}
+          {...register("confirmPassword")}
         />
 
         {success && (
@@ -172,8 +122,8 @@ export const ResetPasswordForm = () => {
           <AuthButton 
             type="submit" 
             color="danger" 
-            label={isLoading ? "Resetting..." : "Reset Password"}
-            disabled={isLoading || !token}
+            label={loading ? "Resetting..." : "Reset Password"}
+            disabled={loading || !token}
           />
         </div>
 

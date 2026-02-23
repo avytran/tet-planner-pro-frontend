@@ -27,3 +27,19 @@ export const REGISTER = gql`
         }
     }
 `;
+
+export const FORGOT_PASSWORD = gql`
+    mutation ForgotPassword($input: ForgotPasswordInput!) {
+        forgotPassword(input: $input) {
+            message
+        }
+    }
+`;
+
+export const RESET_PASSWORD = gql`
+    mutation ResetPassword($input: ResetPasswordInput!) {
+        resetPassword(input: $input) {
+            message
+        }
+    }
+`;
