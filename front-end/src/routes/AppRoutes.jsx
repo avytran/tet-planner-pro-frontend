@@ -11,6 +11,7 @@ import { LoginPage } from "../pages/LoginPage/LoginPage";
 import { SignupPage } from "../pages/SignupPage/SignupPage";
 import { ForgotPasswordPage } from "../pages/ForgotPassword/ForgotPasswordPage";
 import { ResetPasswordPage } from "../pages/ResetPassword/ResetPasswordPage";
+import { ExamplePage } from "../pages/ExamplePage/ExamplePage";
 
 export default function AppRoutes() {
   return (
@@ -22,6 +23,7 @@ export default function AppRoutes() {
         <Route path="budget-management" element={<BudgetManagementPage />} />
         <Route path="shopping-list" element={<ShoppingListPage />} />
         <Route path="about" element={<AboutPage />} />
+        <Route path="example" element={<ExamplePage />} />
       </Route>
       <Route element={<AuthLayout />}>
         <Route path="login" element={<LoginPage />} />
