@@ -913,29 +913,55 @@ export default function TaskManagementPage() {
                 </div>
 
                 {taskItems.length > 0 ? (
-                  <div className="rounded-lg border border-primary/10 bg-white overflow-y-auto flex-1" style={{ maxHeight: "400px" }}>
+                  <div className="rounded-lg border border-primary/10 bg-white overflow-x-auto flex-1" style={{ maxHeight: "400px" }}>
                     <table className="w-full text-xs">
                       <thead className="sticky top-0">
-                        <tr className="bg-primary/10">
-                          <th className="px-2 py-2 text-left font-medium text-primary">Name</th>
-                          <th className="px-2 py-2 text-center font-medium text-primary">Qty</th>
-                          <th className="px-2 py-2 text-right font-medium text-primary">Price</th>
-                          <th className="px-2 py-2 text-center font-medium text-primary">Del</th>
+                        <tr className="bg-primary">
+                          <th className="px-2 py-2 text-left font-medium text-white">Name</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">Date</th>
+                          <th className="px-2 py-2 text-right font-medium text-white">Price</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">Category</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Qty</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Status</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Action</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {taskItems.map((item) => (
-                          <tr key={item.id} className="border-t border-primary/10 hover:bg-primary/5">
+                        {taskItems.map((item, idx) => (
+                          <tr 
+                            key={item.id} 
+                            className={`border-t border-primary/10 hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
+                          >
                             <td className="px-2 py-2 truncate">{item.name}</td>
-                            <td className="px-2 py-2 text-center">{item.quantity}</td>
+                            <td className="px-2 py-2">
+                              {item.duedDate 
+                                ? new Date(item.duedDate).toLocaleDateString('vi-VN', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric'
+                                  })
+                                : '-'
+                              }
+                            </td>
                             <td className="px-2 py-2 text-right">{(item.estimatedPrice || 0).toLocaleString()}</td>
+                            <td className="px-2 py-2">{item.category}</td>
+                            <td className="px-2 py-2 text-center">{item.quantity}</td>
+                            <td className="px-2 py-2 text-center">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                item.status === 'Completed' 
+                                  ? 'bg-success text-white' 
+                                  : 'bg-accent text-white'
+                              }`}>
+                                {item.status}
+                              </span>
+                            </td>
                             <td className="px-2 py-2 text-center">
                               <button
                                 type="button"
                                 onClick={() => deleteItem(item.id)}
-                                className="text-danger hover:text-danger-strong text-xs"
+                                className="text-danger hover:text-danger-strong text-xs font-medium"
                               >
-                                ✕
+                                Delete
                               </button>
                             </td>
                           </tr>
@@ -975,7 +1001,7 @@ export default function TaskManagementPage() {
                         ))}
                       </datalist>
 
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <input
                           type="number"
                           min={0}
@@ -992,12 +1018,23 @@ export default function TaskManagementPage() {
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                           placeholder="Qty"
                         />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
                         <input
                           type="date"
                           value={itemForm.duedDate}
                           onChange={(e) => onItemFormFieldChange("duedDate", e.target.value)}
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                         />
+                        <select
+                          value={itemForm.status}
+                          onChange={(e) => onItemFormFieldChange("status", e.target.value)}
+                          className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                        >
+                          <option value="Planning">Planning</option>
+                          <option value="Completed">Completed</option>
+                        </select>
                       </div>
 
                       <div className="flex gap-2 justify-end">
