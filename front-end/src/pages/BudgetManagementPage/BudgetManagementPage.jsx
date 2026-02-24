@@ -3,7 +3,7 @@ import ShoppingListCard from "../../components/ShoppingListCard/ShoppingListCard
 import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import ShoppingListItem from "../../components/ShoppingListItem/ShoppingListItem.jsx";
 import BudgetCategoryCard from "../../components/BudgetCategoryCard/BudgetCategoryCard.jsx";
-import { PieChart } from "@mui/x-charts/PieChart";
+import { PieChart } from "@mui/x-charts";
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel.jsx";
 import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
 import { Box, Typography } from "@mui/material";
