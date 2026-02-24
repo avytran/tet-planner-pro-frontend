@@ -29,3 +29,12 @@ export const GET_SHOPPING_ITEMS_OF_TASK = gql`
     }
   }
 `;
+
+export const GET_SHOPPING_ITEMS_COUNT = gql`
+  query GetShoppingItemsCount($taskIds: [String!]!) {
+    getShoppingItemsCounts(taskIds: $taskIds) {
+      taskId
+      count
+    }
+  }
+`;

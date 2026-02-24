@@ -14,6 +14,7 @@ import { ShoppingFilter } from "../../components/ShoppingFilter";
 import {
   GET_TASKS_OF_USER,
   GET_SHOPPING_ITEMS_OF_TASK,
+  GET_SHOPPING_ITEMS_COUNT,
 } from "../../graphql/queries/task.query";
 import {
   CREATE_SHOPPING_ITEM,
@@ -193,6 +194,7 @@ const normalizeTaskFromApi = (task) => {
     totalCost: 0,
     description: "",
     barColor: getBarColorFromPriority(normalizedPriority),
+    shoppingItemsCount: 0,
   };
 };
 
@@ -250,6 +252,17 @@ export default function TaskManagementPage() {
     fetchPolicy: "network-only",
   });
 
+  const {
+    data: shoppingItemsCountData,
+    refetch: refetchShoppingItemsCount,
+  } = useQuery(GET_SHOPPING_ITEMS_COUNT, {
+    variables: {
+      taskIds: tasks.map((t) => t.id).filter((id) => !id.startsWith("task-")),
+    },
+    skip: tasks.length === 0,
+    fetchPolicy: "network-only",
+  });
+
   useEffect(() => {
     if (!Array.isArray(tasksData?.getTasksOfUser)) {
       return;
@@ -259,7 +272,28 @@ export default function TaskManagementPage() {
   }, [tasksData]);
 
   useEffect(() => {
-    if (!editingTaskId || !Array.isArray(shoppingItemsData?.getShoppingItemsOfTask)) {
+    if (!Array.isArray(shoppingItemsCountData?.getShoppingItemsCounts)) {
+      return;
+    }
+
+    const countMap = {};
+    shoppingItemsCountData.getShoppingItemsCounts.forEach((item) => {
+      countMap[item.taskId] = item.count || 0;
+    });
+
+    setTasks((prev) =>
+      prev.map((task) => ({
+        ...task,
+        shoppingItemsCount: countMap[task.id] || 0,
+      })),
+    );
+  }, [shoppingItemsCountData]);
+
+  useEffect(() => {
+    if (
+      !editingTaskId ||
+      !Array.isArray(shoppingItemsData?.getShoppingItemsOfTask)
+    ) {
       return;
     }
 
@@ -466,6 +500,30 @@ export default function TaskManagementPage() {
       setTaskItems((prev) => [...prev, nextItem]);
     }
 
+    // Save to database immediately if editing an existing task
+    if (editingTaskId) {
+      const saveItem = async () => {
+        try {
+          await createShoppingItemMutation({
+            variables: {
+              input: {
+                taskId: editingTaskId,
+                name: nextItem.name,
+                category: nextItem.category,
+                price: nextItem.estimatedPrice,
+                quantity: nextItem.quantity,
+                duedTime: nextItem.duedDate,
+                status: nextItem.status,
+              },
+            },
+          });
+        } catch (error) {
+          console.error("Error saving shopping item:", error);
+        }
+      };
+      saveItem();
+    }
+
     // Reset item form để add item mới
     setItemForm({
       name: "",
@@ -480,6 +538,20 @@ export default function TaskManagementPage() {
 
   const deleteItem = (itemId) => {
     setTaskItems((prev) => prev.filter((item) => item.id !== itemId));
+    
+    // Delete from database if it's a saved item (has real MongoDB id)
+    if (itemId && !itemId.startsWith("item-") && editingTaskId) {
+      deleteShoppingItemMutation({
+        variables: {
+          id: itemId,
+        },
+      }).then(() => {
+        // Refetch shopping items count after deletion
+        refetchShoppingItemsCount();
+      }).catch((error) => {
+        console.error("Error deleting shopping item:", error);
+      });
+    }
   };
 
   const onItemFormFieldChange = (field, value) => {
@@ -557,6 +629,8 @@ export default function TaskManagementPage() {
           },
         });
       }
+      // Refetch shopping items count after saving
+      refetchShoppingItemsCount();
     } catch (error) {
       console.error("Error saving shopping items:", error);
       setFormError(
@@ -653,9 +727,16 @@ export default function TaskManagementPage() {
                     ></span>
                     <div className="grid flex-1 grid-cols-1 gap-3 p-3 md:grid-cols-[2fr_1fr_1fr_130px_auto] md:items-center md:gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-primary-strong">
-                          {task.title}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-primary-strong">
+                            {task.title}
+                          </p>
+                          {task.shoppingItemsCount > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent text-white">
+                              {task.shoppingItemsCount}
+                            </span>
+                          )}
+                        </div>
                         <div className="mt-1 flex items-center gap-1 text-xs text-primary-strong/70">
                           <CalendarDaysIcon className="h-3.5 w-3.5" />
                           <span>
