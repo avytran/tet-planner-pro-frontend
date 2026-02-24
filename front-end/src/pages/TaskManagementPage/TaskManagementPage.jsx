@@ -4,12 +4,16 @@ import {
   CalendarDaysIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
+  PencilSquareIcon,
   PlusIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
 import { ShoppingFilter } from "../../components/ShoppingFilter";
 
 const TASK_STATUS_OPTIONS = ["To Do", "In Progress", "Done"];
+const PRIORITY_OPTIONS = ["Low", "Medium", "High"];
+const TIMELINE_OPTIONS = ["Before Tet", "30 Tet", "Mung 1-3"];
 
 const MOCK_TASKS = [
   {
@@ -104,6 +108,26 @@ const SORT_OPTIONS = {
   quantity: "Quantity",
 };
 
+const getBudgetStatusFromTaskStatus = (taskStatus) =>
+  taskStatus === "Done" ? "Completed" : "Planning";
+
+const getBarColorFromPriority = (priority) => {
+  if (priority === "High") return "var(--color-danger)";
+  if (priority === "Medium") return "var(--color-accent)";
+  return "var(--color-success)";
+};
+
+const createEmptyFormState = () => ({
+  title: "",
+  category: "",
+  date: "",
+  description: "",
+  priority: "Low",
+  status: "To Do",
+  timeline: "Before Tet",
+  totalCost: "0",
+});
+
 export default function TaskManagementPage() {
   const [tasks, setTasks] = useState(MOCK_TASKS);
   const [searchValue, setSearchValue] = useState("");
@@ -114,10 +138,14 @@ export default function TaskManagementPage() {
     categories: [],
     priceRange: [0, 5000000],
   });
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [taskForm, setTaskForm] = useState(createEmptyFormState());
+  const [formError, setFormError] = useState("");
 
   const categories = useMemo(() => {
-    return [...new Set(MOCK_TASKS.map((task) => task.category))];
-  }, []);
+    return [...new Set(tasks.map((task) => task.category))];
+  }, [tasks]);
 
   const visibleTasks = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
@@ -129,16 +157,19 @@ export default function TaskManagementPage() {
         task.title.toLowerCase().includes(normalizedSearch);
 
       const matchesStatus =
-        filters.status.length === 0 || filters.status.includes(task.budgetStatus);
+        filters.status.length === 0 ||
+        filters.status.includes(task.budgetStatus);
 
       const matchesTimeline =
-        filters.timeline.length === 0 || filters.timeline.includes(task.timeline);
+        filters.timeline.length === 0 ||
+        filters.timeline.includes(task.timeline);
 
       const matchesCategory =
         filters.categories.length === 0 ||
         filters.categories.includes(task.category);
 
-      const matchesPrice = task.totalCost >= minPrice && task.totalCost <= maxPrice;
+      const matchesPrice =
+        task.totalCost >= minPrice && task.totalCost <= maxPrice;
 
       return (
         matchesSearch &&
@@ -179,9 +210,13 @@ export default function TaskManagementPage() {
 
   const summary = useMemo(() => {
     const total = tasks.length || 1;
-    const inProgress = tasks.filter((task) => task.status === "In Progress").length;
+    const inProgress = tasks.filter(
+      (task) => task.status === "In Progress",
+    ).length;
     const done = tasks.filter((task) => task.status === "Done").length;
-    const before = tasks.filter((task) => task.timeline === "Before Tet").length;
+    const before = tasks.filter(
+      (task) => task.timeline === "Before Tet",
+    ).length;
 
     return {
       inProgress: Math.round((inProgress / total) * 100),
@@ -208,6 +243,85 @@ export default function TaskManagementPage() {
     setTasks([]);
   };
 
+  const openCreateTaskForm = () => {
+    setEditingTaskId(null);
+    setTaskForm(createEmptyFormState());
+    setFormError("");
+    setIsTaskFormOpen(true);
+  };
+
+  const openEditTaskForm = (task) => {
+    setEditingTaskId(task.id);
+    setTaskForm({
+      title: task.title,
+      category: task.category,
+      date: task.date,
+      description: task.description || "",
+      priority: task.priority,
+      status: task.status,
+      timeline: task.timeline,
+      totalCost: task.totalCost.toString(),
+    });
+    setFormError("");
+    setIsTaskFormOpen(true);
+  };
+
+  const closeTaskForm = () => {
+    setIsTaskFormOpen(false);
+    setEditingTaskId(null);
+    setTaskForm(createEmptyFormState());
+    setFormError("");
+  };
+
+  const onTaskFormFieldChange = (field, value) => {
+    setTaskForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const submitTaskForm = (event) => {
+    event.preventDefault();
+
+    if (!taskForm.title.trim() || !taskForm.category.trim() || !taskForm.date) {
+      setFormError("Please fill in title, category and due date.");
+      return;
+    }
+
+    const normalizedCost = Number(taskForm.totalCost) || 0;
+
+    const nextTaskData = {
+      title: taskForm.title.trim(),
+      category: taskForm.category.trim(),
+      date: taskForm.date,
+      description: taskForm.description.trim(),
+      priority: taskForm.priority,
+      status: taskForm.status,
+      timeline: taskForm.timeline,
+      totalCost: normalizedCost,
+      budgetStatus: getBudgetStatusFromTaskStatus(taskForm.status),
+      barColor: getBarColorFromPriority(taskForm.priority),
+    };
+
+    if (editingTaskId) {
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === editingTaskId
+            ? {
+                ...task,
+                ...nextTaskData,
+              }
+            : task,
+        ),
+      );
+    } else {
+      const nextTask = {
+        id: `task-${Date.now()}`,
+        ...nextTaskData,
+      };
+      setTasks((prev) => [nextTask, ...prev]);
+    }
+
+    closeTaskForm();
+  };
+
   return (
     <section className="bg-bg px-4 py-8 md:px-8 md:py-10">
       <div className="mx-auto w-full max-w-[1260px] rounded-sm border border-primary/10 bg-surface p-5 md:p-8">
@@ -219,7 +333,7 @@ export default function TaskManagementPage() {
               label="Add Task"
               color="accent"
               className="!rounded-full !px-5 !py-2 text-sm"
-              onClick={() => {}}
+              onClick={openCreateTaskForm}
             />
             <CommonButton
               label="Clear All"
@@ -276,10 +390,15 @@ export default function TaskManagementPage() {
                   className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
                 >
                   <div className="flex">
-                    <span className="w-3" style={{ backgroundColor: task.barColor }}></span>
-                    <div className="grid flex-1 grid-cols-1 gap-3 p-3 md:grid-cols-[2fr_1fr_1fr_130px] md:items-center md:gap-4">
+                    <span
+                      className="w-3"
+                      style={{ backgroundColor: task.barColor }}
+                    ></span>
+                    <div className="grid flex-1 grid-cols-1 gap-3 p-3 md:grid-cols-[2fr_1fr_1fr_130px_auto] md:items-center md:gap-4">
                       <div>
-                        <p className="text-sm font-semibold text-primary-strong">{task.title}</p>
+                        <p className="text-sm font-semibold text-primary-strong">
+                          {task.title}
+                        </p>
                         <div className="mt-1 flex items-center gap-1 text-xs text-primary-strong/70">
                           <CalendarDaysIcon className="h-3.5 w-3.5" />
                           <span>
@@ -296,14 +415,18 @@ export default function TaskManagementPage() {
                         <p className="text-[11px] font-semibold uppercase text-primary-strong/55">
                           Category
                         </p>
-                        <p className="text-sm text-primary-strong">{task.category}</p>
+                        <p className="text-sm text-primary-strong">
+                          {task.category}
+                        </p>
                       </div>
 
                       <div>
                         <p className="text-[11px] font-semibold uppercase text-primary-strong/55">
                           Priority
                         </p>
-                        <p className={`text-sm font-semibold ${PRIORITY_CLASS[task.priority]}`}>
+                        <p
+                          className={`text-sm font-semibold ${PRIORITY_CLASS[task.priority]}`}
+                        >
                           {task.priority}
                         </p>
                       </div>
@@ -311,7 +434,9 @@ export default function TaskManagementPage() {
                       <div className="relative w-full md:w-[130px]">
                         <select
                           value={task.status}
-                          onChange={(event) => onStatusChange(task.id, event.target.value)}
+                          onChange={(event) =>
+                            onStatusChange(task.id, event.target.value)
+                          }
                           className={`w-full appearance-none rounded-lg border border-primary/20 bg-surface py-1.5 pl-3 pr-8 text-sm outline-none ${STATUS_CLASS[task.status]}`}
                         >
                           {TASK_STATUS_OPTIONS.map((statusOption) => (
@@ -322,6 +447,15 @@ export default function TaskManagementPage() {
                         </select>
                         <ChevronDownIcon className="pointer-events-none absolute right-2 top-2 h-4 w-4 text-primary/70" />
                       </div>
+
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-lg border border-primary/20 px-2.5 py-1.5 text-primary hover:bg-primary/5"
+                        onClick={() => openEditTaskForm(task)}
+                        aria-label={`Edit ${task.title}`}
+                      >
+                        <PencilSquareIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </li>
@@ -345,7 +479,9 @@ export default function TaskManagementPage() {
 
           <aside className="w-full lg:w-[300px]">
             <div className="mb-4 rounded-xl border border-primary/10 bg-white p-4">
-              <h2 className="mb-2 text-2xl font-semibold text-primary-strong">Tasks in Categories</h2>
+              <h2 className="mb-2 text-2xl font-semibold text-primary-strong">
+                Tasks in Categories
+              </h2>
               <div className="flex justify-center">
                 <PieChart
                   width={260}
@@ -375,7 +511,9 @@ export default function TaskManagementPage() {
             </div>
 
             <div className="rounded-xl border border-primary/10 bg-white p-4">
-              <h2 className="mb-4 text-3xl font-semibold text-primary-strong">Task Overview</h2>
+              <h2 className="mb-4 text-3xl font-semibold text-primary-strong">
+                Task Overview
+              </h2>
 
               <OverviewRow
                 title="Task In Progress"
@@ -400,7 +538,182 @@ export default function TaskManagementPage() {
           </aside>
         </div>
       </div>
+
+      {isTaskFormOpen && (
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-primary/10 bg-surface p-5 md:p-6">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-3xl font-bold text-primary">
+                  {editingTaskId ? "Edit Task" : "New Task"}
+                </h3>
+                <p className="mt-1 text-sm text-primary-strong/60">
+                  Tết is more fun when your deadline stays in line too.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="rounded-full border border-primary/30 p-1 text-primary"
+                onClick={closeTaskForm}
+                aria-label="Close form"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form className="space-y-3" onSubmit={submitTaskForm}>
+              <FieldRow label="Title">
+                <input
+                  type="text"
+                  value={taskForm.title}
+                  onChange={(event) =>
+                    onTaskFormFieldChange("title", event.target.value)
+                  }
+                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  placeholder="Task title"
+                />
+              </FieldRow>
+
+              <FieldRow label="Category">
+                <input
+                  type="text"
+                  value={taskForm.category}
+                  onChange={(event) =>
+                    onTaskFormFieldChange("category", event.target.value)
+                  }
+                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  placeholder="Food, Decoration..."
+                  list="task-category-options"
+                />
+                <datalist id="task-category-options">
+                  {categories.map((category) => (
+                    <option key={category} value={category} />
+                  ))}
+                </datalist>
+              </FieldRow>
+
+              <FieldRow label="Due Time">
+                <input
+                  type="date"
+                  value={taskForm.date}
+                  onChange={(event) =>
+                    onTaskFormFieldChange("date", event.target.value)
+                  }
+                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                />
+              </FieldRow>
+
+              <FieldRow label="Description">
+                <input
+                  type="text"
+                  value={taskForm.description}
+                  onChange={(event) =>
+                    onTaskFormFieldChange("description", event.target.value)
+                  }
+                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  placeholder="Task description"
+                />
+              </FieldRow>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <FieldRow label="Priority" inline>
+                  <select
+                    value={taskForm.priority}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("priority", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  >
+                    {PRIORITY_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </FieldRow>
+
+                <FieldRow label="Status" inline>
+                  <select
+                    value={taskForm.status}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("status", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  >
+                    {TASK_STATUS_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </FieldRow>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <FieldRow label="Timeline" inline>
+                  <select
+                    value={taskForm.timeline}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("timeline", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  >
+                    {TIMELINE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </FieldRow>
+
+                <FieldRow label="Budget (VND)" inline>
+                  <input
+                    type="number"
+                    min={0}
+                    value={taskForm.totalCost}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("totalCost", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                  />
+                </FieldRow>
+              </div>
+
+              {formError && <p className="text-sm text-danger">{formError}</p>}
+
+              <div className="mt-5 flex justify-center gap-3">
+                <button
+                  type="button"
+                  className="rounded-full border border-primary/30 px-5 py-2 text-sm text-primary"
+                  onClick={closeTaskForm}
+                >
+                  Cancel
+                </button>
+                <CommonButton
+                  type="submit"
+                  label={editingTaskId ? "Save Change" : "Create Task"}
+                  color="accent"
+                  className="!rounded-full !px-6 !py-2 text-sm"
+                />
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </section>
+  );
+}
+
+function FieldRow({ label, children, inline = false }) {
+  return (
+    <div
+      className={`grid gap-2 ${inline ? "grid-cols-[80px_1fr] items-center" : "grid-cols-1"}`}
+    >
+      <label className="text-sm font-semibold text-primary-strong">
+        {label}
+      </label>
+      {children}
+    </div>
   );
 }
 
@@ -413,7 +726,10 @@ function OverviewRow({ title, value, helperText, colorClass, isLast = false }) {
       </div>
       <p className="mb-1 text-xs text-primary-strong/75">{value}%</p>
       <div className="h-2 overflow-hidden rounded-full bg-primary/10">
-        <div className={`h-full ${colorClass}`} style={{ width: `${value}%` }}></div>
+        <div
+          className={`h-full ${colorClass}`}
+          style={{ width: `${value}%` }}
+        ></div>
       </div>
       <p className="mt-1 text-[11px] text-primary-strong/60">{helperText}</p>
     </div>
