@@ -5,7 +5,7 @@ import { ChartsComponent } from "../../components/ChartsComponent/ChartsComponen
 
 export const ExamplePage = () => {
   return (
-    <div className="text-1xl font-bold">
+    <div className="text-xl font-bold">
         <ExampleComponent></ExampleComponent>
         <ChartsComponent></ChartsComponent>
     </div>
