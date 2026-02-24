@@ -3,8 +3,7 @@ import { gql } from "@apollo/client";
 export const LOGIN = gql`
     mutation Login($input: LoginInput!) {
         login(input: $input) {
-            accessToken
-            refreshToken
+            success
             user {
                 id
                 email
@@ -41,5 +40,11 @@ export const RESET_PASSWORD = gql`
         resetPassword(input: $input) {
             message
         }
+    }
+`;
+
+export const LOGOUT = gql`
+    mutation Mutation {
+        logout
     }
 `;
