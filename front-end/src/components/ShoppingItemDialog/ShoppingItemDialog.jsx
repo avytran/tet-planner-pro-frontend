@@ -7,7 +7,7 @@ import ShoppingItemForm from "./ShoppingItemForm";
 import ShoppingItemMessages from "./ShoppingItemMessages";
 
 const statusOptions = ["Planning", "Completed"];
-const timelineOptions = ["Before Tet", "30 Tet", "Mung 1-3"];
+const timelineOptions = ["Pre Tet", "During Tet", "After Tet"];
 
 export default function ShoppingItemDialog({
     open = true,
@@ -25,6 +25,35 @@ export default function ShoppingItemDialog({
         { title: "Mua hoa", category: "Gift" },
         { title: "Lì xì", category: "Gift" },
     ]);
+
+    // Temporary mock data for recently added items (replace with real data or state)
+    const mockRecentlyAdded = [
+        {
+            id: 1,
+            name: "Bánh chưng",
+            date: "2026-02-01",
+            price: 100000,
+            category: "Food",
+            qty: 2,
+            status: "Planning",
+        },
+        {
+            id: 2,
+            name: "Hoa mai",
+            date: "2026-02-02",
+            price: 200000,
+            category: "Gift",
+            qty: 1,
+            status: "Completed",
+        },
+    ];
+
+    // Temporary mock values for ShoppingItemMessages props (replace with real logic/state)
+    const totalShoppingCost = 300000;
+    const remainingBudget = 500000;
+    const maxBudget = 800000;
+    const newItemsCount = mockRecentlyAdded.length;
+    const addedAmount = mockRecentlyAdded.reduce((sum, item) => sum + item.price * item.qty, 0);
 
     useEffect(() => {
         // Simulate async fetch
