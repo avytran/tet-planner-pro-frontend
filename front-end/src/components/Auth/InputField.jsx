@@ -1,0 +1,54 @@
+import { forwardRef } from "react";
+
+export const InputField = forwardRef(({
+  label,
+  icon,
+  rightIcon,
+  onRightIconClick,
+  name,
+  type = "text",
+  placeholder,
+  error,
+  ...props
+}, ref) => {
+  return (
+    <div className="space-y-1 mb-8">
+      {label && (
+        <label
+          htmlFor={name}
+          className="block  font-body-strong font-bold  text-primary-strong"
+        >
+          {label}
+        </label>
+      )}
+      <div className="flex items-center gap-2 bg-white rounded-md border-b-1 w-full">
+
+        {icon && <span className="text-primary-strong text-lg w-10 h-10 flex items-center justify-center">{icon}</span>}
+        <input
+          ref={ref}
+          id={name}
+          name={name}
+          type={type}
+          placeholder={placeholder}
+          className="font-normal text-black w-full border-neutral-300 px-3 py-2 text-sm outline-none focus:ring-0 focus:outline-none focus:border-black "
+          {...props}
+        />
+
+        {rightIcon && (
+          <button
+            type="button"
+            onClick={onRightIconClick}
+            className="text-gray-500 hover:text-black w-10 h-10 flex items-center justify-center"
+          >
+            {rightIcon}
+          </button>
+        )}
+      </div>
+        {error && (
+          <p className="text-red-500 text-sm mt-1">{error}</p>
+        )}
+    </div>
+  );
+});
+
+InputField.displayName = "InputField";
