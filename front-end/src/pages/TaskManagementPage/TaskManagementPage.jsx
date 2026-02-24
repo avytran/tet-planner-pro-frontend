@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { PieChart } from "@mui/x-charts";
 import {
   CalendarDaysIcon,
@@ -10,6 +11,9 @@ import {
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
 import { ShoppingFilter } from "../../components/ShoppingFilter";
+import { GET_TASKS_OF_USER } from "../../graphql/queries/task.query";
+import { CREATE_SHOPPING_ITEM, DELETE_SHOPPING_ITEM } from "../../graphql/mutations/shoppingItem.mutation";
+import { useAuth } from "../../hooks/useAuth";
 
 const TASK_STATUS_OPTIONS = ["To Do", "In Progress", "Done"];
 const PRIORITY_OPTIONS = ["Low", "Medium", "High"];
@@ -128,7 +132,66 @@ const createEmptyFormState = () => ({
   totalCost: "0",
 });
 
+const normalizeOptionValue = (value) =>
+  String(value || "")
+    .replace(/_/g, " ")
+    .trim()
+    .toLowerCase();
+
+const mapPriorityFromApi = (value) => {
+  const normalized = normalizeOptionValue(value);
+  if (normalized === "high") return "High";
+  if (normalized === "medium") return "Medium";
+  return "Low";
+};
+
+const mapStatusFromApi = (value) => {
+  const normalized = normalizeOptionValue(value);
+  if (normalized === "in progress") return "In Progress";
+  if (normalized === "done") return "Done";
+  if (normalized === "todo") return "To Do";
+  return "To Do";
+};
+
+const mapTimelineFromApi = (value) => {
+  const normalized = normalizeOptionValue(value);
+  if (normalized.includes("pre") || normalized.includes("before")) {
+    return "Before Tet";
+  }
+  if (normalized.includes("30")) {
+    return "30 Tet";
+  }
+  if (normalized.includes("after") || normalized.includes("mung")) {
+    return "Mung 1-3";
+  }
+  return "Before Tet";
+};
+
+const normalizeTaskFromApi = (task) => {
+  const normalizedPriority = mapPriorityFromApi(task?.priority);
+  const normalizedStatus = mapStatusFromApi(task?.status);
+  const normalizedTimeline = mapTimelineFromApi(task?.timeline);
+  const normalizedDate = task?.duedTime
+    ? new Date(task.duedTime).toISOString().slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+
+  return {
+    id: task?.id || `task-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    title: task?.title || "",
+    date: normalizedDate,
+    category: task?.categoryId || "General",
+    priority: normalizedPriority,
+    status: normalizedStatus,
+    timeline: normalizedTimeline,
+    budgetStatus: getBudgetStatusFromTaskStatus(normalizedStatus),
+    totalCost: 0,
+    description: "",
+    barColor: getBarColorFromPriority(normalizedPriority),
+  };
+};
+
 export default function TaskManagementPage() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState(MOCK_TASKS);
   const [searchValue, setSearchValue] = useState("");
   const [sortBy, setSortBy] = useState("date");
@@ -142,6 +205,40 @@ export default function TaskManagementPage() {
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [taskForm, setTaskForm] = useState(createEmptyFormState());
   const [formError, setFormError] = useState("");
+  const [taskItems, setTaskItems] = useState([]);
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [editingItemId, setEditingItemId] = useState(null);
+  const [itemForm, setItemForm] = useState({
+    name: "",
+    category: "",
+    estimatedPrice: "0",
+    quantity: "1",
+    duedDate: "",
+    status: "Planning",
+  });
+
+  const {
+    data: tasksData,
+    loading: isTasksLoading,
+    error: tasksError,
+  } = useQuery(GET_TASKS_OF_USER, {
+    variables: {
+      userId: user?.id,
+    },
+    skip: !user?.id,
+    fetchPolicy: "network-only",
+  });
+
+  const [createShoppingItemMutation] = useMutation(CREATE_SHOPPING_ITEM);
+  const [deleteShoppingItemMutation] = useMutation(DELETE_SHOPPING_ITEM);
+
+  useEffect(() => {
+    if (!Array.isArray(tasksData?.getTasksOfUser)) {
+      return;
+    }
+
+    setTasks(tasksData.getTasksOfUser.map(normalizeTaskFromApi));
+  }, [tasksData]);
 
   const categories = useMemo(() => {
     return [...new Set(tasks.map((task) => task.category))];
@@ -271,13 +368,78 @@ export default function TaskManagementPage() {
     setEditingTaskId(null);
     setTaskForm(createEmptyFormState());
     setFormError("");
+    setTaskItems([]);
+    setShowItemForm(false);
+    setEditingItemId(null);
+  };
+
+  const openItemForm = () => {
+    setEditingItemId(null);
+    setItemForm({
+      name: "",
+      category: "",
+      estimatedPrice: "0",
+      quantity: "1",
+      duedDate: "",
+      status: "Planning",
+    });
+    setShowItemForm(true);
+  };
+
+  const closeItemForm = () => {
+    setShowItemForm(false);
+    setEditingItemId(null);
+    setItemForm({
+      name: "",
+      category: "",
+      estimatedPrice: "0",
+      quantity: "1",
+      duedDate: "",
+      status: "Planning",
+    });
+  };
+
+  const submitItemForm = (event) => {
+    event.preventDefault();
+
+    if (!itemForm.name.trim() || !itemForm.category.trim()) {
+      return;
+    }
+
+    const nextItem = {
+      id: editingItemId || `item-${Date.now()}`,
+      name: itemForm.name.trim(),
+      category: itemForm.category.trim(),
+      estimatedPrice: Number(itemForm.estimatedPrice) || 0,
+      quantity: Number(itemForm.quantity) || 1,
+      duedDate: itemForm.duedDate,
+      status: itemForm.status,
+    };
+
+    if (editingItemId) {
+      setTaskItems((prev) =>
+        prev.map((item) => (item.id === editingItemId ? nextItem : item)),
+      );
+    } else {
+      setTaskItems((prev) => [...prev, nextItem]);
+    }
+
+    closeItemForm();
+  };
+
+  const deleteItem = (itemId) => {
+    setTaskItems((prev) => prev.filter((item) => item.id !== itemId));
+  };
+
+  const onItemFormFieldChange = (field, value) => {
+    setItemForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const onTaskFormFieldChange = (field, value) => {
     setTaskForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const submitTaskForm = (event) => {
+  const submitTaskForm = async (event) => {
     event.preventDefault();
 
     if (!taskForm.title.trim() || !taskForm.category.trim() || !taskForm.date) {
@@ -300,7 +462,16 @@ export default function TaskManagementPage() {
       barColor: getBarColorFromPriority(taskForm.priority),
     };
 
-    if (editingTaskId) {
+    let newTaskId = editingTaskId;
+
+    if (!editingTaskId) {
+      newTaskId = `task-${Date.now()}`;
+      const nextTask = {
+        id: newTaskId,
+        ...nextTaskData,
+      };
+      setTasks((prev) => [nextTask, ...prev]);
+    } else {
       setTasks((prev) =>
         prev.map((task) =>
           task.id === editingTaskId
@@ -311,12 +482,33 @@ export default function TaskManagementPage() {
             : task,
         ),
       );
-    } else {
-      const nextTask = {
-        id: `task-${Date.now()}`,
-        ...nextTaskData,
-      };
-      setTasks((prev) => [nextTask, ...prev]);
+    }
+
+    // Save shopping items to DB with taskId
+    try {
+      for (const item of taskItems) {
+        // Skip if item already has MongoDB id (already saved)
+        if (item.id && !item.id.startsWith("item-")) {
+          continue;
+        }
+
+        await createShoppingItemMutation({
+          variables: {
+            input: {
+              taskId: newTaskId,
+              name: item.name,
+              category: item.category,
+              price: item.estimatedPrice,
+              quantity: item.quantity,
+              duedTime: item.duedDate,
+              status: item.status,
+            },
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error saving shopping items:", error);
+      setFormError("Failed to save shopping items. Task was saved but items may not be persisted.");
     }
 
     closeTaskForm();
@@ -343,6 +535,18 @@ export default function TaskManagementPage() {
             />
           </div>
         </div>
+
+        {isTasksLoading && (
+          <p className="mb-4 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-primary-strong/70">
+            Loading tasks from server...
+          </p>
+        )}
+
+        {tasksError && (
+          <p className="mb-4 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+            Failed to load tasks from backend. Showing local data.
+          </p>
+        )}
 
         <div className="flex flex-col gap-4 lg:flex-row">
           <ShoppingFilter
@@ -540,8 +744,8 @@ export default function TaskManagementPage() {
       </div>
 
       {isTaskFormOpen && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-primary/10 bg-surface p-5 md:p-6">
+        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
+          <div className="w-full max-w-5xl rounded-2xl border border-primary/10 bg-surface p-5 md:p-6 my-8">
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
                 <h3 className="text-3xl font-bold text-primary">
@@ -553,7 +757,7 @@ export default function TaskManagementPage() {
               </div>
               <button
                 type="button"
-                className="rounded-full border border-primary/30 p-1 text-primary"
+                className="rounded-full border border-primary/30 p-1 text-primary flex-shrink-0"
                 onClick={closeTaskForm}
                 aria-label="Close form"
               >
@@ -561,130 +765,257 @@ export default function TaskManagementPage() {
               </button>
             </div>
 
-            <form className="space-y-3" onSubmit={submitTaskForm}>
-              <FieldRow label="Title">
-                <input
-                  type="text"
-                  value={taskForm.title}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("title", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Task title"
-                />
-              </FieldRow>
+            <form onSubmit={submitTaskForm} className="grid gap-6 md:grid-cols-[1fr_1fr]">
+              {/* Left column: Task form */}
+              <div className="space-y-3">
+                <h4 className="font-semibold text-primary mb-4">Task Details</h4>
 
-              <FieldRow label="Category">
-                <input
-                  type="text"
-                  value={taskForm.category}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("category", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Food, Decoration..."
-                  list="task-category-options"
-                />
-                <datalist id="task-category-options">
-                  {categories.map((category) => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
-              </FieldRow>
-
-              <FieldRow label="Due Time">
-                <input
-                  type="date"
-                  value={taskForm.date}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("date", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                />
-              </FieldRow>
-
-              <FieldRow label="Description">
-                <input
-                  type="text"
-                  value={taskForm.description}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("description", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Task description"
-                />
-              </FieldRow>
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <FieldRow label="Priority" inline>
-                  <select
-                    value={taskForm.priority}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("priority", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {PRIORITY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-
-                <FieldRow label="Status" inline>
-                  <select
-                    value={taskForm.status}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("status", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {TASK_STATUS_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <FieldRow label="Timeline" inline>
-                  <select
-                    value={taskForm.timeline}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("timeline", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {TIMELINE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-
-                <FieldRow label="Budget (VND)" inline>
+                <FieldRow label="Title">
                   <input
-                    type="number"
-                    min={0}
-                    value={taskForm.totalCost}
+                    type="text"
+                    value={taskForm.title}
                     onChange={(event) =>
-                      onTaskFormFieldChange("totalCost", event.target.value)
+                      onTaskFormFieldChange("title", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    placeholder="Task title"
+                  />
+                </FieldRow>
+
+                <FieldRow label="Category">
+                  <input
+                    type="text"
+                    value={taskForm.category}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("category", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    placeholder="Food, Decoration..."
+                    list="task-category-options"
+                  />
+                  <datalist id="task-category-options">
+                    {categories.map((category) => (
+                      <option key={category} value={category} />
+                    ))}
+                  </datalist>
+                </FieldRow>
+
+                <FieldRow label="Due Time">
+                  <input
+                    type="date"
+                    value={taskForm.date}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("date", event.target.value)
                     }
                     className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
                   />
                 </FieldRow>
+
+                <FieldRow label="Description">
+                  <input
+                    type="text"
+                    value={taskForm.description}
+                    onChange={(event) =>
+                      onTaskFormFieldChange("description", event.target.value)
+                    }
+                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    placeholder="Task description"
+                  />
+                </FieldRow>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FieldRow label="Priority" inline>
+                    <select
+                      value={taskForm.priority}
+                      onChange={(event) =>
+                        onTaskFormFieldChange("priority", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    >
+                      {PRIORITY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldRow>
+
+                  <FieldRow label="Status" inline>
+                    <select
+                      value={taskForm.status}
+                      onChange={(event) =>
+                        onTaskFormFieldChange("status", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    >
+                      {TASK_STATUS_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldRow>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FieldRow label="Timeline" inline>
+                    <select
+                      value={taskForm.timeline}
+                      onChange={(event) =>
+                        onTaskFormFieldChange("timeline", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    >
+                      {TIMELINE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </FieldRow>
+
+                  <FieldRow label="Budget (VND)" inline>
+                    <input
+                      type="number"
+                      min={0}
+                      value={taskForm.totalCost}
+                      onChange={(event) =>
+                        onTaskFormFieldChange("totalCost", event.target.value)
+                      }
+                      className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
+                    />
+                  </FieldRow>
+                </div>
+
+                {formError && <p className="text-sm text-danger">{formError}</p>}
               </div>
 
-              {formError && <p className="text-sm text-danger">{formError}</p>}
+              {/* Right column: Shopping items */}
+              <div className="flex flex-col space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-primary">Shopping Items</h4>
+                  <button
+                    type="button"
+                    onClick={openItemForm}
+                    className="text-sm text-accent hover:text-accent-strong font-medium"
+                  >
+                    + Add Item
+                  </button>
+                </div>
 
-              <div className="mt-5 flex justify-center gap-3">
+                {taskItems.length > 0 ? (
+                  <div className="rounded-lg border border-primary/10 bg-white overflow-y-auto flex-1" style={{ maxHeight: "400px" }}>
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0">
+                        <tr className="bg-primary/10">
+                          <th className="px-2 py-2 text-left font-medium text-primary">Name</th>
+                          <th className="px-2 py-2 text-center font-medium text-primary">Qty</th>
+                          <th className="px-2 py-2 text-right font-medium text-primary">Price</th>
+                          <th className="px-2 py-2 text-center font-medium text-primary">Del</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {taskItems.map((item) => (
+                          <tr key={item.id} className="border-t border-primary/10 hover:bg-primary/5">
+                            <td className="px-2 py-2 truncate">{item.name}</td>
+                            <td className="px-2 py-2 text-center">{item.quantity}</td>
+                            <td className="px-2 py-2 text-right">{(item.estimatedPrice || 0).toLocaleString()}</td>
+                            <td className="px-2 py-2 text-center">
+                              <button
+                                type="button"
+                                onClick={() => deleteItem(item.id)}
+                                className="text-danger hover:text-danger-strong text-xs"
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-primary-strong/60 text-sm border border-dashed border-primary/20 rounded-lg">
+                    No items added yet.
+                  </div>
+                )}
+
+                {showItemForm && (
+                  <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-2">
+                    <h5 className="font-medium text-accent text-sm">Add Shopping Item</h5>
+                    <form onSubmit={submitItemForm} className="space-y-2">
+                      <input
+                        type="text"
+                        value={itemForm.name}
+                        onChange={(e) => onItemFormFieldChange("name", e.target.value)}
+                        className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                        placeholder="Item name"
+                      />
+
+                      <input
+                        type="text"
+                        value={itemForm.category}
+                        onChange={(e) => onItemFormFieldChange("category", e.target.value)}
+                        className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                        placeholder="Category"
+                        list="item-category-options"
+                      />
+                      <datalist id="item-category-options">
+                        {categories.map((cat) => (
+                          <option key={cat} value={cat} />
+                        ))}
+                      </datalist>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          value={itemForm.estimatedPrice}
+                          onChange={(e) => onItemFormFieldChange("estimatedPrice", e.target.value)}
+                          className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                          placeholder="Price"
+                        />
+                        <input
+                          type="number"
+                          min={1}
+                          value={itemForm.quantity}
+                          onChange={(e) => onItemFormFieldChange("quantity", e.target.value)}
+                          className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                          placeholder="Qty"
+                        />
+                        <input
+                          type="date"
+                          value={itemForm.duedDate}
+                          onChange={(e) => onItemFormFieldChange("duedDate", e.target.value)}
+                          className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={closeItemForm}
+                          className="rounded-lg border border-primary/20 px-2 py-1 text-xs text-primary hover:bg-primary/5"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="rounded-lg bg-accent px-3 py-1 text-xs text-white hover:bg-accent-strong"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+
+              {/* Buttons - full width below */}
+              <div className="col-span-full flex justify-center gap-3 mt-4 pt-4 border-t border-primary/10">
                 <button
                   type="button"
-                  className="rounded-full border border-primary/30 px-5 py-2 text-sm text-primary"
+                  className="rounded-full border border-primary/30 px-6 py-2 text-sm text-primary hover:bg-primary/5"
                   onClick={closeTaskForm}
                 >
                   Cancel
@@ -693,7 +1024,7 @@ export default function TaskManagementPage() {
                   type="submit"
                   label={editingTaskId ? "Save Change" : "Create Task"}
                   color="accent"
-                  className="!rounded-full !px-6 !py-2 text-sm"
+                  className="!rounded-full !px-8 !py-2 text-sm"
                 />
               </div>
             </form>
