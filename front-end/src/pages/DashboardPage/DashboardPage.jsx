@@ -16,7 +16,7 @@ export default function DashboardPage() {
   });
 
   const tasksDone = 50;
-  const itemsDone = 60;
+  const itemsDone = 70;
   const budgetSpent = 80;
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
@@ -26,11 +26,11 @@ export default function DashboardPage() {
       return "#AEA9B1";
     }
 
-    if (tasksDone >= 60) {
+    if (tasksDone >= 70) {
       return "var(--color-success)";
     }
 
-    return "var(--color-accent)";
+    return "#0043CE";
   };
 
   const progressBudgetColor = (budgetSpent) => {
@@ -38,8 +38,8 @@ export default function DashboardPage() {
       return "#AEA9B1";
     }
 
-    if (budgetSpent === 100) {
-      return "var(--color-primary)";
+    if (budgetSpent >= 95) {
+      return "var(--color-danger)";
     }
 
     if (budgetSpent >= 80) {
@@ -340,7 +340,21 @@ export default function DashboardPage() {
               { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
             ]}
             height={300}
-
+            xAxis={[{
+              scaleType: 'point', data: [
+                '2023-01',
+                '2023-02',
+                '2023-03',
+                '2023-04',
+                '2023-05',
+                '2023-06',
+                '2023-07',
+                '2023-08',
+                '2023-09',
+                '2023-10',
+                '2023-11',
+              ]
+            }]}
             slotProps={{
               legend: {
                 direction: 'horizontal',
