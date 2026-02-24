@@ -407,7 +407,7 @@ export default function TaskManagementPage() {
     }
 
     const nextItem = {
-      id: editingItemId || `item-${Date.now()}`,
+      id: editingItemId || `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       name: itemForm.name.trim(),
       category: itemForm.category.trim(),
       estimatedPrice: Number(itemForm.estimatedPrice) || 0,
@@ -424,7 +424,16 @@ export default function TaskManagementPage() {
       setTaskItems((prev) => [...prev, nextItem]);
     }
 
-    closeItemForm();
+    // Reset item form để add item mới
+    setItemForm({
+      name: "",
+      category: "",
+      estimatedPrice: "0",
+      quantity: "1",
+      duedDate: "",
+      status: "Planning",
+    });
+    // Giữ form mở để tiếp tục thêm items khác
   };
 
   const deleteItem = (itemId) => {
@@ -997,13 +1006,13 @@ export default function TaskManagementPage() {
                           onClick={closeItemForm}
                           className="rounded-lg border border-primary/20 px-2 py-1 text-xs text-primary hover:bg-primary/5"
                         >
-                          Cancel
+                          Done
                         </button>
                         <button
                           type="submit"
                           className="rounded-lg bg-accent px-3 py-1 text-xs text-white hover:bg-accent-strong"
                         >
-                          Add
+                          + Add
                         </button>
                       </div>
                     </form>
