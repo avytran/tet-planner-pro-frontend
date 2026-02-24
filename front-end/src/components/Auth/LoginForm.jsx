@@ -41,9 +41,7 @@ export const LoginForm = () => {
         },
       });
 
-      if (data?.login?.accessToken && data?.login?.refreshToken) {
-        localStorage.setItem("accessToken", data.login.accessToken);
-        localStorage.setItem("refreshToken", data.login.refreshToken);
+      if (data.login.success) {
         navigate("/");
       }
 
