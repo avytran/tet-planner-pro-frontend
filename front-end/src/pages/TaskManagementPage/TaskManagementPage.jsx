@@ -11,8 +11,14 @@ import {
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
 import { ShoppingFilter } from "../../components/ShoppingFilter";
-import { GET_TASKS_OF_USER } from "../../graphql/queries/task.query";
-import { CREATE_SHOPPING_ITEM, DELETE_SHOPPING_ITEM } from "../../graphql/mutations/shoppingItem.mutation";
+import {
+  GET_TASKS_OF_USER,
+  GET_SHOPPING_ITEMS_OF_TASK,
+} from "../../graphql/queries/task.query";
+import {
+  CREATE_SHOPPING_ITEM,
+  DELETE_SHOPPING_ITEM,
+} from "../../graphql/mutations/shoppingItem.mutation";
 import { useAuth } from "../../hooks/useAuth";
 
 const TASK_STATUS_OPTIONS = ["To Do", "In Progress", "Done"];
@@ -232,6 +238,18 @@ export default function TaskManagementPage() {
   const [createShoppingItemMutation] = useMutation(CREATE_SHOPPING_ITEM);
   const [deleteShoppingItemMutation] = useMutation(DELETE_SHOPPING_ITEM);
 
+  const {
+    data: shoppingItemsData,
+    loading: isShoppingItemsLoading,
+    refetch: refetchShoppingItems,
+  } = useQuery(GET_SHOPPING_ITEMS_OF_TASK, {
+    variables: {
+      taskId: editingTaskId,
+    },
+    skip: !editingTaskId,
+    fetchPolicy: "network-only",
+  });
+
   useEffect(() => {
     if (!Array.isArray(tasksData?.getTasksOfUser)) {
       return;
@@ -239,6 +257,28 @@ export default function TaskManagementPage() {
 
     setTasks(tasksData.getTasksOfUser.map(normalizeTaskFromApi));
   }, [tasksData]);
+
+  useEffect(() => {
+    if (!editingTaskId || !Array.isArray(shoppingItemsData?.getShoppingItemsOfTask)) {
+      return;
+    }
+
+    const normalizedItems = shoppingItemsData.getShoppingItemsOfTask.map(
+      (item) => ({
+        id: item.id,
+        name: item.name,
+        category: item.category,
+        estimatedPrice: item.price || 0,
+        quantity: item.quantity || 1,
+        duedDate: item.duedTime
+          ? new Date(item.duedTime).toISOString().slice(0, 10)
+          : "",
+        status: item.status || "Planning",
+      }),
+    );
+
+    setTaskItems(normalizedItems);
+  }, [shoppingItemsData, editingTaskId]);
 
   const categories = useMemo(() => {
     return [...new Set(tasks.map((task) => task.category))];
@@ -407,7 +447,9 @@ export default function TaskManagementPage() {
     }
 
     const nextItem = {
-      id: editingItemId || `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      id:
+        editingItemId ||
+        `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       name: itemForm.name.trim(),
       category: itemForm.category.trim(),
       estimatedPrice: Number(itemForm.estimatedPrice) || 0,
@@ -517,7 +559,9 @@ export default function TaskManagementPage() {
       }
     } catch (error) {
       console.error("Error saving shopping items:", error);
-      setFormError("Failed to save shopping items. Task was saved but items may not be persisted.");
+      setFormError(
+        "Failed to save shopping items. Task was saved but items may not be persisted.",
+      );
     }
 
     closeTaskForm();
@@ -774,10 +818,15 @@ export default function TaskManagementPage() {
               </button>
             </div>
 
-            <form onSubmit={submitTaskForm} className="grid gap-6 md:grid-cols-[1fr_1fr]">
+            <form
+              onSubmit={submitTaskForm}
+              className="grid gap-6 md:grid-cols-[1fr_1fr]"
+            >
               {/* Left column: Task form */}
               <div className="space-y-3">
-                <h4 className="font-semibold text-primary mb-4">Task Details</h4>
+                <h4 className="font-semibold text-primary mb-4">
+                  Task Details
+                </h4>
 
                 <FieldRow label="Title">
                   <input
@@ -896,7 +945,9 @@ export default function TaskManagementPage() {
                   </FieldRow>
                 </div>
 
-                {formError && <p className="text-sm text-danger">{formError}</p>}
+                {formError && (
+                  <p className="text-sm text-danger">{formError}</p>
+                )}
               </div>
 
               {/* Right column: Shopping items */}
@@ -913,45 +964,70 @@ export default function TaskManagementPage() {
                 </div>
 
                 {taskItems.length > 0 ? (
-                  <div className="rounded-lg border border-primary/10 bg-white overflow-x-auto flex-1" style={{ maxHeight: "400px" }}>
+                  <div
+                    className="rounded-lg border border-primary/10 bg-white overflow-x-auto flex-1"
+                    style={{ maxHeight: "400px" }}
+                  >
                     <table className="w-full text-xs">
                       <thead className="sticky top-0">
                         <tr className="bg-primary">
-                          <th className="px-2 py-2 text-left font-medium text-white">Name</th>
-                          <th className="px-2 py-2 text-left font-medium text-white">Date</th>
-                          <th className="px-2 py-2 text-right font-medium text-white">Price</th>
-                          <th className="px-2 py-2 text-left font-medium text-white">Category</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Qty</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Status</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Action</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Name
+                          </th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Date
+                          </th>
+                          <th className="px-2 py-2 text-right font-medium text-white">
+                            Price
+                          </th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Category
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Qty
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Status
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         {taskItems.map((item, idx) => (
-                          <tr 
-                            key={item.id} 
-                            className={`border-t border-primary/10 hover:bg-primary/5 ${idx % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
+                          <tr
+                            key={item.id}
+                            className={`border-t border-primary/10 hover:bg-primary/5 ${idx % 2 === 0 ? "bg-surface" : "bg-highlight/30"}`}
                           >
                             <td className="px-2 py-2 truncate">{item.name}</td>
                             <td className="px-2 py-2">
-                              {item.duedDate 
-                                ? new Date(item.duedDate).toLocaleDateString('vi-VN', {
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric'
-                                  })
-                                : '-'
-                              }
+                              {item.duedDate
+                                ? new Date(item.duedDate).toLocaleDateString(
+                                    "vi-VN",
+                                    {
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                    },
+                                  )
+                                : "-"}
                             </td>
-                            <td className="px-2 py-2 text-right">{(item.estimatedPrice || 0).toLocaleString()}</td>
+                            <td className="px-2 py-2 text-right">
+                              {(item.estimatedPrice || 0).toLocaleString()}
+                            </td>
                             <td className="px-2 py-2">{item.category}</td>
-                            <td className="px-2 py-2 text-center">{item.quantity}</td>
                             <td className="px-2 py-2 text-center">
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                item.status === 'Completed' 
-                                  ? 'bg-success text-white' 
-                                  : 'bg-accent text-white'
-                              }`}>
+                              {item.quantity}
+                            </td>
+                            <td className="px-2 py-2 text-center">
+                              <span
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  item.status === "Completed"
+                                    ? "bg-success text-white"
+                                    : "bg-accent text-white"
+                                }`}
+                              >
                                 {item.status}
                               </span>
                             </td>
@@ -974,18 +1050,35 @@ export default function TaskManagementPage() {
                     <table className="w-full text-xs">
                       <thead className="sticky top-0">
                         <tr className="bg-primary">
-                          <th className="px-2 py-2 text-left font-medium text-white">Name</th>
-                          <th className="px-2 py-2 text-left font-medium text-white">Date</th>
-                          <th className="px-2 py-2 text-right font-medium text-white">Price</th>
-                          <th className="px-2 py-2 text-left font-medium text-white">Category</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Qty</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Status</th>
-                          <th className="px-2 py-2 text-center font-medium text-white">Action</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Name
+                          </th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Date
+                          </th>
+                          <th className="px-2 py-2 text-right font-medium text-white">
+                            Price
+                          </th>
+                          <th className="px-2 py-2 text-left font-medium text-white">
+                            Category
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Qty
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Status
+                          </th>
+                          <th className="px-2 py-2 text-center font-medium text-white">
+                            Action
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td colSpan="7" className="px-2 py-8 text-center text-primary-strong/60 text-sm">
+                          <td
+                            colSpan="7"
+                            className="px-2 py-8 text-center text-primary-strong/60 text-sm"
+                          >
                             No items added yet.
                           </td>
                         </tr>
@@ -996,12 +1089,16 @@ export default function TaskManagementPage() {
 
                 {showItemForm && (
                   <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-2">
-                    <h5 className="font-medium text-accent text-sm">Add Shopping Item</h5>
+                    <h5 className="font-medium text-accent text-sm">
+                      Add Shopping Item
+                    </h5>
                     <div className="space-y-2">
                       <input
                         type="text"
                         value={itemForm.name}
-                        onChange={(e) => onItemFormFieldChange("name", e.target.value)}
+                        onChange={(e) =>
+                          onItemFormFieldChange("name", e.target.value)
+                        }
                         className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                         placeholder="Item name"
                       />
@@ -1009,7 +1106,9 @@ export default function TaskManagementPage() {
                       <input
                         type="text"
                         value={itemForm.category}
-                        onChange={(e) => onItemFormFieldChange("category", e.target.value)}
+                        onChange={(e) =>
+                          onItemFormFieldChange("category", e.target.value)
+                        }
                         className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                         placeholder="Category"
                         list="item-category-options"
@@ -1025,7 +1124,12 @@ export default function TaskManagementPage() {
                           type="number"
                           min={0}
                           value={itemForm.estimatedPrice}
-                          onChange={(e) => onItemFormFieldChange("estimatedPrice", e.target.value)}
+                          onChange={(e) =>
+                            onItemFormFieldChange(
+                              "estimatedPrice",
+                              e.target.value,
+                            )
+                          }
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                           placeholder="Price"
                         />
@@ -1033,7 +1137,9 @@ export default function TaskManagementPage() {
                           type="number"
                           min={1}
                           value={itemForm.quantity}
-                          onChange={(e) => onItemFormFieldChange("quantity", e.target.value)}
+                          onChange={(e) =>
+                            onItemFormFieldChange("quantity", e.target.value)
+                          }
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                           placeholder="Qty"
                         />
@@ -1043,12 +1149,16 @@ export default function TaskManagementPage() {
                         <input
                           type="date"
                           value={itemForm.duedDate}
-                          onChange={(e) => onItemFormFieldChange("duedDate", e.target.value)}
+                          onChange={(e) =>
+                            onItemFormFieldChange("duedDate", e.target.value)
+                          }
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                         />
                         <select
                           value={itemForm.status}
-                          onChange={(e) => onItemFormFieldChange("status", e.target.value)}
+                          onChange={(e) =>
+                            onItemFormFieldChange("status", e.target.value)
+                          }
                           className="w-full rounded-lg border border-primary/20 bg-white px-2 py-1.5 text-xs outline-none focus:border-primary/50"
                         >
                           <option value="Planning">Planning</option>

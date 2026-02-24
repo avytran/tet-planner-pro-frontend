@@ -15,3 +15,17 @@ export const GET_TASKS_OF_USER = gql`
     }
   }
 `;
+
+export const GET_SHOPPING_ITEMS_OF_TASK = gql`
+  query GetShoppingItemsOfTask($taskId: String!) {
+    getShoppingItemsOfTask(taskId: $taskId) {
+      id
+      name
+      duedTime
+      price
+      category
+      quantity
+      status
+    }
+  }
+`;
