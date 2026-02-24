@@ -970,15 +970,34 @@ export default function TaskManagementPage() {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-primary-strong/60 text-sm border border-dashed border-primary/20 rounded-lg">
-                    No items added yet.
+                  <div className="rounded-lg border border-primary/10 bg-white overflow-x-auto flex-1">
+                    <table className="w-full text-xs">
+                      <thead className="sticky top-0">
+                        <tr className="bg-primary">
+                          <th className="px-2 py-2 text-left font-medium text-white">Name</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">Date</th>
+                          <th className="px-2 py-2 text-right font-medium text-white">Price</th>
+                          <th className="px-2 py-2 text-left font-medium text-white">Category</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Qty</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Status</th>
+                          <th className="px-2 py-2 text-center font-medium text-white">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td colSpan="7" className="px-2 py-8 text-center text-primary-strong/60 text-sm">
+                            No items added yet.
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 )}
 
                 {showItemForm && (
                   <div className="rounded-lg border border-accent/20 bg-accent/5 p-3 space-y-2">
                     <h5 className="font-medium text-accent text-sm">Add Shopping Item</h5>
-                    <form onSubmit={submitItemForm} className="space-y-2">
+                    <div className="space-y-2">
                       <input
                         type="text"
                         value={itemForm.name}
@@ -1040,19 +1059,13 @@ export default function TaskManagementPage() {
                       <div className="flex gap-2 justify-end">
                         <button
                           type="button"
-                          onClick={closeItemForm}
-                          className="rounded-lg border border-primary/20 px-2 py-1 text-xs text-primary hover:bg-primary/5"
-                        >
-                          Done
-                        </button>
-                        <button
-                          type="submit"
+                          onClick={submitItemForm}
                           className="rounded-lg bg-accent px-3 py-1 text-xs text-white hover:bg-accent-strong"
                         >
                           + Add
                         </button>
                       </div>
-                    </form>
+                    </div>
                   </div>
                 )}
               </div>
