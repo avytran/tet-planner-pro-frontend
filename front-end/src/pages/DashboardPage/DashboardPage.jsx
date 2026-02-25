@@ -46,14 +46,6 @@ function mapData(data) {
   return { result, total, done, notDone }
 }
 
-function calPercentage(done, total) {
-  if (done === 0 && total === 0) {
-    return 0
-  } else {
-    return (done / total) * 100
-  }
-}
-
 function transformData(mapData) {
 
   const innerData = timelineArr.map((timeline) => {
@@ -88,6 +80,14 @@ function transformData(mapData) {
     .flat();
 
   return { innerData, outerData };
+}
+
+function calPercentage(done, total) {
+  if (done === 0 && total === 0) {
+    return 0
+  } else {
+    return (done / total) * 100
+  }
 }
 
 /**
