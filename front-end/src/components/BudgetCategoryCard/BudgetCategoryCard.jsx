@@ -19,7 +19,7 @@ export default function BudgetCategoryCard({
 }) {
   const remainingAmount = totalAmount - amountSpent;
   const percentageUsed = ((amountSpent / totalAmount) * 100).toFixed(2);
-  const percentegeRemain = (100 - percentageUsed).toFixed(2);
+  const percentegeRemain = Number((100 - percentageUsed).toFixed(2));
   let color = "success";
   if (percentageUsed > 50 && percentageUsed <= 80) {
     color = "accent-soft";
