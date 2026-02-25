@@ -27,9 +27,9 @@ export const GET_ITEMS = gql`
                 status
                 timeline
                 duedTime
-                    budget {
-                        name
-                    }
+                budget {
+                    name
+                }
             }
         }
     }
