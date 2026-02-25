@@ -330,8 +330,8 @@ export default function BudgetManagementPage() {
               series={lineChartData}
               slotProps={{
                 legend: {
-                  direction: "row",
-                  position: { vertical: "bottom", horizontal: "middle" },
+                  direction: "horizontal",
+                  position: { vertical: "bottom", horizontal: "center" },
                   padding: 0,
                 },
               }}
@@ -390,7 +390,7 @@ export default function BudgetManagementPage() {
                 <ul className="flex flex-col gap-5 items-center overflow-y-auto  max-h-175">
                   {preTetShoppingItems.map((item) => (
                     <ShoppingListCard
-                      key={item._id}
+                      key={item.id}
                       category={"Decoration"}
                       name={item.name}
                       date={item.duedTime.slice(0, 10)}
@@ -406,7 +406,7 @@ export default function BudgetManagementPage() {
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
                   {duringTetShoppingItems.map((item) => (
                     <ShoppingListCard
-                      key={item._id}
+                      key={item.id}
                       category={"Decoration"}
                       name={item.name}
                       date={item.duedTime.slice(0, 10)}
@@ -422,7 +422,7 @@ export default function BudgetManagementPage() {
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
                   {afterTetShoppingItems.map((item) => (
                     <ShoppingListCard
-                      key={item._id}
+                      key={item.id}
                       category={"Decoration"}
                       name={item.name}
                       date={item.duedTime.slice(0, 10)}
@@ -440,7 +440,7 @@ export default function BudgetManagementPage() {
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
                   {todayShoppingItems.map((item) => (
                     <ShoppingListCard
-                      key={item._id}
+                      key={item.id}
                       category={"Decoration"}
                       name={item.name}
                       date={item.duedTime.slice(0, 10)}
