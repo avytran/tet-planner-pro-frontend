@@ -10,15 +10,16 @@ export default function CommonButton({
   className = "",
 }) {
   const colorClasses = {
-    accent: "bg-accent hover:bg-accent-soft",
-    success: "bg-success-strong hover:bg-success",
-    danger: "bg-primary  hover:bg-danger",
+    accent: "bg-accent hover:bg-accent-soft text-white",
+    success: "bg-success-strong hover:bg-success text-white",
+    danger: "bg-primary  hover:bg-danger text-white",
+    secondary: "bg-white text-primary border ",
   };
 
   return (
     <button
       type={type}
-      className={`w-fit font-normal text-white rounded-3xl flex py-3 px-5 justify-between gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
+      className={`w-fit min-w-20 font-normal  rounded-3xl flex py-3 px-5 justify-center gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
       onClick={onClick}
     >
       {leadingIcon}

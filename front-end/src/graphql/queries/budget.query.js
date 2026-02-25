@@ -1,0 +1,20 @@
+import { gql } from "@apollo/client";
+
+export const GET_TOTAL_BUDGET = gql`
+  query GetTotalBudget($userId: String!) {
+    getTotalBudget(userId: $userId) {
+      totalBudget
+    }
+  }
+`;
+
+export const GET_BUDGETS = gql`
+  query GetBudgetsOfUser($userId: String!) {
+    getBudgetsOfUser(userId: $userId) {
+      allocatedAmount
+      id
+      name
+      summary
+    }
+  }
+`;

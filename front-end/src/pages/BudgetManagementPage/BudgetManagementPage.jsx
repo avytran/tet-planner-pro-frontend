@@ -1,320 +1,180 @@
-import React from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import ShoppingListCard from "../../components/ShoppingListCard/ShoppingListCard.jsx";
 import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import ShoppingListItem from "../../components/ShoppingListItem/ShoppingListItem.jsx";
 import BudgetCategoryCard from "../../components/BudgetCategoryCard/BudgetCategoryCard.jsx";
 import { PieChart } from "@mui/x-charts/PieChart";
-import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel.jsx";
 import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
-import { Box, Typography } from "@mui/material";
+import CircularProgress from "@mui/material/CircularProgress";
+import Box from "@mui/material/Box";
+import { Typography } from "@mui/material";
 import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { LineChart } from "@mui/x-charts/LineChart";
 import CommonButton from "../../components/Button/CommonButton.jsx";
+import EditTotalBudgetModal from "@/components/EditBudgetModal/EditTotalBudgetModal.jsx";
+
+import { useAuth } from "@/hooks/useAuth.js";
+import { useBudgetData } from "@/hooks/useFetchBudgetData.js";
+import { useShoppingItemsByTimeline } from "@/hooks/useShoppingItemsGrByTime.js";
+import { useTopCostShoppingItems } from "@/hooks/useTopCostShoppingItems.js";
+
+const STATUS_CONFIG = {
+  safe: {
+    basedColor: "success",
+    fadedColor: "color-mix(in srgb, var(--color-success), transparent 70%)",
+    messageTitle: "Great! Everything is safe",
+    messageDescription:
+      "Your Tết budget is looking great! 🎉 You’re spending smart and staying on track.",
+  },
+
+  caution: {
+    basedColor: "accent",
+    fadedColor: "color-mix(in srgb, var(--color-festive), transparent 70%)",
+    messageTitle: "Be careful! Your budget is below safe level",
+    messageDescription:
+      "It’s important to keep an eye on your spending and make adjustments to stay within your limits.",
+  },
+
+  warning: {
+    basedColor: "danger",
+    fadedColor: "color-mix(in srgb, var(--color-danger), transparent 70%)",
+    messageTitle: "Warning! You’re close to your budget limit",
+    messageDescription:
+      "You’re getting close to your budget limit 👀 A little planning now will keep your Tết stress-free.",
+  },
+
+  default: {
+    basedColor: "accent-soft",
+    fadedColor: "color-mix(in srgb, var(--color-accent-soft), transparent 70%)",
+    messageTitle: "Plan your budget for a joyful Tết",
+    messageDescription:
+      "Set a budget that lets you enjoy the festivities without worrying about overspending. A little planning goes a long way!",
+  },
+};
+
+const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
+
+const chartColors = [
+  "var(--color-primary-strong)",
+  "var(--color-primary)",
+  "var(--color-danger)",
+  "var(--color-accent)",
+  "var(--color-accent-soft)",
+  "var(--color-highlight)",
+  "var(--color-festive)",
+];
+
+const lineChartData = [
+  {
+    curve: "linear",
+    color: "var(--color-success)",
+    data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5],
+    label: "Food",
+  },
+  {
+    curve: "linear",
+    color: "var(--color-danger)",
+    data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3],
+    label: "Decoration",
+  },
+  {
+    curve: "linear",
+    color: "var(--color-accent)",
+    data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4],
+    label: "Cloths",
+  },
+  {
+    curve: "linear",
+    color: "var(--color-highlight)",
+    data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4],
+    label: "Others",
+  },
+];
 
 export default function BudgetManagementPage() {
-  const value = 6500000;
-  const max = 10000000;
-  const percent = ((value / max) * 100).toFixed(2);
+  const { user } = useAuth();
 
-  const STATUS_CONFIG = {
-    safe: {
-      basedColor: "success",
-      fadedColor: "color-mix(in srgb, var(--color-success), transparent 70%)",
-      messageTitle: "Great! Everything is safe",
-      messageDescription:
-        "Your Tết budget is looking great! 🎉 You’re spending smart and staying on track.",
-    },
+  const {
+    totalBudget,
+    totalSpending,
+    remaining,
+    budgets,
+    loading: budgetLoading,
+    error: budgetError,
+  } = useBudgetData(user.id);
 
-    caution: {
-      basedColor: "accent",
-      fadedColor: "color-mix(in srgb, var(--color-festive), transparent 70%)",
-      messageTitle: "Be careful! Your budget is below safe level",
-      messageDescription:
-        "It’s important to keep an eye on your spending and make adjustments to stay within your limits.",
-    },
+  const {
+    preTet: preTetShoppingItems,
+    duringTet: duringTetShoppingItems,
+    afterTet: afterTetShoppingItems,
+    today: todayShoppingItems,
+    loading: shoppingItemsLoading,
+    error: shoppingItemsError,
+  } = useShoppingItemsByTimeline(user.id);
 
-    warning: {
-      basedColor: "danger",
-      fadedColor: "color-mix(in srgb, var(--color-danger), transparent 70%)",
-      messageTitle: "Warning! You’re close to your budget limit",
-      messageDescription:
-        "You’re getting close to your budget limit 👀 A little planning now will keep your Tết stress-free.",
-    },
-  };
+  const {
+    data: topCostShoppingItems,
+    loading: topShoppingItemsLoading,
+    error: topShoppingItemsError,
+  } = useTopCostShoppingItems(user.id);
+
+  const [showTotalDialog, setShowTotalDialog] = useState(false);
+  // const value = 0;
+  const percent =
+    totalBudget > 0 ? ((remaining / totalBudget) * 100).toFixed(2) : 0;
 
   const statusKey =
-    percent > 50 ? "safe" : percent < 20 ? "warning" : "caution";
+    totalBudget > 0
+      ? percent > 50
+        ? "safe"
+        : percent < 20
+          ? "warning"
+          : "caution"
+      : "default";
 
   const { basedColor, fadedColor, messageTitle, messageDescription } =
     STATUS_CONFIG[statusKey];
 
-  const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
+  const finalData = useMemo(() => {
+    if (!totalBudget || totalBudget === 0) return [];
 
-  const items = [
-    // ===== PRE TET =====
-    {
-      _id: "s1000001-0000-4000-8000-000000000001",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t1000001-0000-4000-8000-000000000001",
-      name: "Banh Chung",
-      price: 120000,
-      quantity: 3,
-      status: "completed",
-      dued_time: "2026-02-14T08:00:00Z",
-      timeline: "Pre Tet",
-      created_at: { $date: "2026-02-14T09:00:00Z" },
-    },
-    {
-      _id: "s1000002-0000-4000-8000-000000000002",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t1000002-0000-4000-8000-000000000002",
-      name: "Mut Tet",
-      price: 90000,
-      quantity: 4,
-      status: "completed",
-      dued_time: "2026-02-13T07:00:00Z",
-      timeline: "Pre Tet",
-      created_at: { $date: "2026-02-13T08:00:00Z" },
-    },
-    {
-      _id: "s1000003-0000-4000-8000-000000000003",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t1000003-0000-4000-8000-000000000003",
-      name: "Trang Tri Nha",
-      price: 300000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-12T05:00:00Z",
-      timeline: "Pre Tet",
-      created_at: { $date: "2026-02-12T06:00:00Z" },
-    },
-    {
-      _id: "s1000004-0000-4000-8000-000000000004",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t1000004-0000-4000-8000-000000000004",
-      name: "Hoa Dao",
-      price: 450000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-15T03:00:00Z",
-      timeline: "Pre Tet",
-      created_at: { $date: "2026-02-15T04:00:00Z" },
-    },
-    {
-      _id: "s1000005-0000-4000-8000-000000000005",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t1000005-0000-4000-8000-000000000005",
-      name: "Qua Bieu",
-      price: 600000,
-      quantity: 2,
-      status: "planning",
-      dued_time: "2026-02-16T09:00:00Z",
-      timeline: "Pre Tet",
-      created_at: { $date: "2026-02-16T10:00:00Z" },
-    },
+    const renderedData = budgets.map((item, index) => ({
+      value: parseFloat(
+        ((item.allocatedAmount / totalBudget) * 100).toFixed(2),
+      ),
+      color: chartColors[index % chartColors.length],
+      label: item.name,
+    }));
 
-    // ===== DURING TET =====
-    {
-      _id: "s2000001-0000-4000-8000-000000000001",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t2000001-0000-4000-8000-000000000001",
-      name: "Li Xi",
-      price: 1200000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-17T02:00:00Z",
-      timeline: "During Tet",
-      created_at: { $date: "2026-02-10T10:00:00Z" },
-    },
-    {
-      _id: "s2000002-0000-4000-8000-000000000002",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t2000002-0000-4000-8000-000000000002",
-      name: "Chuc Tet Gia Dinh",
-      price: 200000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-17T06:00:00Z",
-      timeline: "During Tet",
-      created_at: { $date: "2026-02-11T08:00:00Z" },
-    },
-    {
-      _id: "s2000003-0000-4000-8000-000000000003",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t2000003-0000-4000-8000-000000000003",
-      name: "Di Chua",
-      price: 150000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-18T04:00:00Z",
-      timeline: "During Tet",
-      created_at: { $date: "2026-02-12T09:00:00Z" },
-    },
-    {
-      _id: "s2000004-0000-4000-8000-000000000004",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t2000004-0000-4000-8000-000000000004",
-      name: "An Tat Nien",
-      price: 500000,
-      quantity: 1,
-      status: "completed",
-      dued_time: "2026-02-18T11:00:00Z",
-      timeline: "During Tet",
-      created_at: { $date: "2026-02-18T12:00:00Z" },
-    },
-    {
-      _id: "s2000005-0000-4000-8000-000000000005",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t2000005-0000-4000-8000-000000000005",
-      name: "Gap Ban Be",
-      price: 300000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-19T07:00:00Z",
-      timeline: "During Tet",
-      created_at: { $date: "2026-02-13T07:30:00Z" },
-    },
+    const totalRendered = renderedData.reduce(
+      (sum, item) => sum + item.value,
+      0,
+    );
 
-    // ===== AFTER TET =====
-    {
-      _id: "s3000001-0000-4000-8000-000000000001",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t3000001-0000-4000-8000-000000000001",
-      name: "Khai Xuan",
-      price: 200000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-20T03:00:00Z",
-      timeline: "After Tet",
-      created_at: { $date: "2026-02-15T08:00:00Z" },
-    },
-    {
-      _id: "s3000002-0000-4000-8000-000000000002",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t3000002-0000-4000-8000-000000000002",
-      name: "Cafe Dau Nam",
-      price: 120000,
-      quantity: 2,
-      status: "planning",
-      dued_time: "2026-02-21T03:00:00Z",
-      timeline: "After Tet",
-      created_at: { $date: "2026-02-15T09:00:00Z" },
-    },
-    {
-      _id: "s3000003-0000-4000-8000-000000000003",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t3000003-0000-4000-8000-000000000003",
-      name: "Du Lich Ngan Ngay",
-      price: 1500000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-22T05:00:00Z",
-      timeline: "After Tet",
-      created_at: { $date: "2026-02-16T07:00:00Z" },
-    },
-    {
-      _id: "s3000004-0000-4000-8000-000000000004",
-      budget_id: "b1111111-1111-4111-8111-111111111111",
-      task_id: "t3000004-0000-4000-8000-000000000004",
-      name: "Mua Do Moi",
-      price: 400000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-23T06:00:00Z",
-      timeline: "After Tet",
-      created_at: { $date: "2026-02-16T10:00:00Z" },
-    },
-    {
-      _id: "s3000005-0000-4000-8000-000000000005",
-      budget_id: "b2222222-2222-4222-8222-222222222222",
-      task_id: "t3000005-0000-4000-8000-000000000005",
-      name: "An Tan Nien",
-      price: 600000,
-      quantity: 1,
-      status: "planning",
-      dued_time: "2026-02-24T11:00:00Z",
-      timeline: "After Tet",
-      created_at: { $date: "2026-02-17T08:00:00Z" },
-    },
-  ];
+    const otherItem = {
+      value: parseFloat((100 - totalRendered).toFixed(2)),
+      color: "color-mix(in srgb, var(--color-danger), transparent 70%)",
+      label: "Other",
+    };
 
-  const categoriesData = [
-    {
-      name: "Food & Dining",
-      amountSpent: 6500000,
-      totalAmount: 7000000,
-      itemsCount: 12,
-    },
-    {
-      name: "Transportation",
-      amountSpent: 2000000,
-      totalAmount: 5000000,
-      itemsCount: 8,
-    },
-    {
-      name: "Housing",
-      amountSpent: 8000000,
-      totalAmount: 12000000,
-      itemsCount: 6,
-    },
-    {
-      name: "Utilities",
-      amountSpent: 1500000,
-      totalAmount: 3000000,
-      itemsCount: 4,
-    },
-    {
-      name: "Shopping",
-      amountSpent: 4500000,
-      totalAmount: 8000000,
-      itemsCount: 10,
-    },
-    {
-      name: "Entertainment",
-      amountSpent: 3500000,
-      totalAmount: 6000000,
-      itemsCount: 5,
-    },
-    {
-      name: "Travel",
-      amountSpent: 7000000,
-      totalAmount: 10000000,
-      itemsCount: 3,
-    },
-    {
-      name: "Health & Fitness",
-      amountSpent: 2500000,
-      totalAmount: 4000000,
-      itemsCount: 7,
-    },
-  ];
+    return otherItem.value > 0 ? [...renderedData, otherItem] : renderedData;
+  }, [budgets, totalBudget, chartColors]);
 
-  const lineChartData = [
-    {
-      curve: "linear",
-      color: "var(--color-success)",
-      data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5],
-      label: "Food",
-    },
-    {
-      curve: "linear",
-      color: "var(--color-danger)",
-      data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3],
-      label: "Decoration",
-    },
-    {
-      curve: "linear",
-      color: "var(--color-accent)",
-      data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4],
-      label: "Cloths",
-    },
-    {
-      curve: "linear",
-      color: "var(--color-highlight)",
-      data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4],
-      label: "Others",
-    },
-  ];
+  if (budgetLoading || shoppingItemsLoading || topShoppingItemsLoading)
+    return (
+      <div className=" flex justify-center items-center p-20">
+        <Box sx={{ display: "flex" }}>
+          <CircularProgress />
+        </Box>
+      </div>
+    );
+
+  if (budgetError || shoppingItemsError || topShoppingItemsError)
+    return (
+      <div className="flex justify-center items-center p-20">
+        Fail to load data
+      </div>
+    );
 
   return (
     <div>
@@ -324,45 +184,37 @@ export default function BudgetManagementPage() {
             <div className="flex-1 flex flex-col gap-3 ">
               <h1 className="font-bold text-5xl text-primary">Overview</h1>
               <div className="bg-white rounded-3xl p-9 flex flex-col gap-7 h-full">
-                <div className="flex  gap-2 items-center h-full">
+                <div className="flex  gap-2 items-center ">
                   <div className="h-3 w-3 rounded-full bg-danger"></div>
                   <p className="text-2xl font-semibold">Budget distribution</p>
                 </div>
-                <PieChart
-                  series={[
-                    {
-                      innerRadius: 50,
-                      outerRadius: 100,
-                      data: [
-                        {
-                          value: 30,
-                          color: "var(--color-accent)",
-                          label: "Food",
-                        },
-                        {
-                          value: 30,
-                          color: "var(--color-danger)",
-                          label: "Decoration",
-                        },
-                        {
-                          value: 40,
-                          color: "var(--color-primary)",
-                          label: "Others",
-                        },
-                      ],
-                      valueFormatter: (item) => `${item.value}%`,
-                      highlightScope: { fade: "global", highlight: "item" },
-                      faded: { innerRadius: 30, additionalRadius: -10 },
-                    },
-                  ]}
-                  height={280}
-                  width={280}
-                  hideLegend
-                >
-                  {/* <PieCenterLabel color="var(--color-primary)" fontSize={20}>
+                {budgets.length > 0 ? (
+                  <PieChart
+                    series={[
+                      {
+                        innerRadius: 50,
+                        outerRadius: 100,
+                        data: finalData,
+                        valueFormatter: (item) => `${item.value}%`,
+                        highlightScope: { fade: "global", highlight: "item" },
+                        faded: { innerRadius: 30, additionalRadius: -10 },
+                      },
+                    ]}
+                    height={280}
+                    width={280}
+                    hideLegend
+                  >
+                    {/* <PieCenterLabel color="var(--color-primary)" fontSize={20}>
                   Class
                 </PieCenterLabel> */}
-                </PieChart>
+                  </PieChart>
+                ) : (
+                  <div className="flex">
+                    No spending data yet. <br />
+                    Once you add shopping items, your spending breakdown will
+                    appear here.
+                  </div>
+                )}
               </div>
             </div>
             <div className="bg-white rounded-3xl p-9 flex flex-col gap-5 items-center w-full md:w-auto">
@@ -370,7 +222,9 @@ export default function BudgetManagementPage() {
                 <p className="text-2xl font-semibold">Total Budget</p>
                 <button
                   className="h-5 w-5  cursor-pointer"
-                  onClick={() => alert("Clik edit button")}
+                  onClick={() => {
+                    setShowTotalDialog(true);
+                  }}
                 >
                   <PencilIcon />
                 </button>
@@ -388,13 +242,15 @@ export default function BudgetManagementPage() {
                   <Gauge
                     width={256}
                     height={256}
-                    value={value}
-                    valueMax={max}
+                    value={remaining}
+                    valueMax={totalBudget}
                     startAngle={-135}
                     endAngle={135}
                     cornerRadius="50%"
                     text={({ value, valueMax }) => {
-                      const formatted = (max - value).toLocaleString("en-US");
+                      const formatted = (
+                        totalBudget - remaining
+                      ).toLocaleString("en-US");
                       const str = `You've spent \n ${formatted} VND`;
                       return str;
                     }}
@@ -428,10 +284,10 @@ export default function BudgetManagementPage() {
                 </Box>
                 <p>Remaining</p>
                 <p className={`font-bold text-5xl text-${basedColor}`}>
-                  {value.toLocaleString("en-US")}
+                  {remaining.toLocaleString("en-US")}
                 </p>
                 <p className={`font-normal text-base text-${basedColor}`}>
-                  /{max.toLocaleString("en-US")} VND
+                  /{totalBudget.toLocaleString("en-US")} VND
                 </p>
               </div>
             </div>
@@ -447,19 +303,16 @@ export default function BudgetManagementPage() {
                   Hight-Impact Items
                 </p>
                 <ul className="flex flex-col gap-4">
-                  {items
-                    .sort((a, b) => b.price - a.price)
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <ShoppingListItem
-                        key={item._id}
-                        name={item.name}
-                        price={item.price}
-                        quantity={item.quantity}
-                        bgColor={colors[index]}
-                        textColor={"text-white"}
-                      />
-                    ))}
+                  {topCostShoppingItems.slice(0, 3).map((item, index) => (
+                    <ShoppingListItem
+                      key={item.id}
+                      name={item.name}
+                      price={item.price}
+                      quantity={item.quantity}
+                      bgColor={colors[index]}
+                      textColor={"text-white"}
+                    />
+                  ))}
                 </ul>
               </div>
             </div>
@@ -502,15 +355,23 @@ export default function BudgetManagementPage() {
             className="flex gap-7  overflow-x-auto py-5 
   "
           >
-            {categoriesData.map((category, index) => (
-              <BudgetCategoryCard
-                key={index}
-                category={category.name}
-                amountSpent={category.amountSpent}
-                totalAmount={category.totalAmount}
-                itemsCount={category.itemsCount}
-              />
-            ))}
+            {budgets.length > 0 ? (
+              budgets.map((category, index) => (
+                <BudgetCategoryCard
+                  key={index}
+                  category={category.name}
+                  amountSpent={category.summary}
+                  totalAmount={category.allocatedAmount}
+                  // itemsCount={category.itemsCount}
+                />
+              ))
+            ) : (
+              <div className="text-primary bg-white/70  border-white border p-10 rounded-4xl">
+                <p className="font-bold">You haven't add budget categories.</p>
+                Create category budgets to manage how much you spend on gifts,
+                food, and more.
+              </div>
+            )}
           </ul>
         </div>
       </>
@@ -520,84 +381,84 @@ export default function BudgetManagementPage() {
           <p className="font-normal text-xl md:text-3xl text-center">
             Don’t miss a thing to make your Tết truly complete
           </p>
-          <div className="flex  w-full flex-wrap gap-5 justify-center">
-            <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col ">
-              <p className="font-bold text-xl text-center">Pre Tet</p>
-              <ul className="flex flex-col gap-5 items-center overflow-y-auto  max-h-175">
-                {items
-                  .filter((item) => item.timeline === "Pre Tet")
-                  .map((item) => (
+          {preTetShoppingItems.length > 0 ||
+          duringTetShoppingItems.length > 0 ||
+          afterTetShoppingItems.length > 0 ? (
+            <div className="flex  w-full flex-wrap gap-5 justify-center">
+              <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col ">
+                <p className="font-bold text-xl text-center">Pre Tet</p>
+                <ul className="flex flex-col gap-5 items-center overflow-y-auto  max-h-175">
+                  {preTetShoppingItems.map((item) => (
                     <ShoppingListCard
                       key={item._id}
                       category={"Decoration"}
                       name={item.name}
-                      date={item.dued_time.slice(0, 10)}
+                      date={item.duedTime.slice(0, 10)}
                       price={item.price}
                       qty={item.quantity}
                       status={item.status}
                     />
                   ))}
-              </ul>
-            </div>
-            <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
-              <p className="font-bold text-xl text-center">During Tet</p>
-              <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                {items
-                  .filter((item) => item.timeline === "During Tet")
-                  .map((item) => (
+                </ul>
+              </div>
+              <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
+                <p className="font-bold text-xl text-center">During Tet</p>
+                <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
+                  {duringTetShoppingItems.map((item) => (
                     <ShoppingListCard
                       key={item._id}
                       category={"Decoration"}
                       name={item.name}
-                      date={item.dued_time.slice(0, 10)}
+                      date={item.duedTime.slice(0, 10)}
                       price={item.price}
                       qty={item.quantity}
                       status={item.status}
                     />
                   ))}
-              </ul>
-            </div>
-            <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
-              <p className="font-bold text-xl text-center">After Tet</p>
-              <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                {items
-                  .filter((item) => item.timeline === "After Tet")
-                  .map((item) => (
+                </ul>
+              </div>
+              <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
+                <p className="font-bold text-xl text-center">After Tet</p>
+                <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
+                  {afterTetShoppingItems.map((item) => (
                     <ShoppingListCard
                       key={item._id}
                       category={"Decoration"}
                       name={item.name}
-                      date={item.dued_time.slice(0, 10)}
+                      date={item.duedTime.slice(0, 10)}
                       price={item.price}
                       qty={item.quantity}
                       status={item.status}
                     />
                   ))}
-              </ul>
-            </div>
-            <div className="flex-1 bg-accent p-5 rounded-3xl gap-5 flex flex-col ">
-              <p className="font-bold text-xl text-center text-white">Today</p>
-              <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                {items
-                  .filter(
-                    (item) =>
-                      item.dued_time.slice(0, 10) ===
-                      new Date().toISOString().slice(0, 10),
-                  )
-                  .map((item) => (
+                </ul>
+              </div>
+              <div className="flex-1 bg-accent p-5 rounded-3xl gap-5 flex flex-col ">
+                <p className="font-bold text-xl text-center text-white">
+                  Today
+                </p>
+                <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
+                  {todayShoppingItems.map((item) => (
                     <ShoppingListCard
                       key={item._id}
                       category={"Decoration"}
                       name={item.name}
-                      date={item.dued_time.slice(0, 10)}
+                      date={item.duedTime.slice(0, 10)}
                       price={item.price}
                       qty={item.quantity}
                       status={item.status}
                     />
                   ))}
-              </ul>
+                </ul>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="text-primary bg-white/70  border-white border p-10 rounded-4xl">
+              <p className="font-bold">Your shopping list is empty.</p>
+              Add items you plan to buy so you can track costs and stay within
+              budget.
+            </div>
+          )}
         </div>
       </>
       <>
@@ -616,6 +477,16 @@ export default function BudgetManagementPage() {
           </p>
         </div>
       </>
+
+      {showTotalDialog && (
+        <EditTotalBudgetModal
+          onSave={() => {
+            alert("Saved!");
+            setShowTotalDialog(false);
+          }}
+          onClose={() => setShowTotalDialog(false)}
+        />
+      )}
     </div>
   );
 }
