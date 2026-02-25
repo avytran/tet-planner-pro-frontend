@@ -2,12 +2,195 @@ import { Box, Typography } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
-import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
 import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 import { LineChart } from '@mui/x-charts/LineChart';
+import { useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext';
+import { useTasks, useItems, useTaskCategory, useTotalBudget } from '../../hooks/dashboardHooks'
 
+const timelineArr = ['Pre_Tet', 'During_Tet', 'After_Tet']
+const timelineColors = {
+  'Pre_Tet': 'var(--color-success)',
+  'During_Tet': 'var(--color-primary)',
+  'After_Tet': 'var(--color-accent)'
+};
+
+function mapData(data) {
+  let total = data.length
+  let done = 0
+  let notDone = 0
+  const result = data.reduce((map, item) => {
+    const timeline = item.timeline;
+
+    if (!map.has(timeline)) {
+      map.set(timeline, [0, 0, 0]); // [total, done, notDone]
+    }
+
+    const stats = map.get(timeline);
+
+    stats[0] += 1; // total
+
+    if (item.status === "Done" || item.status === "Completed") {
+      stats[1] += 1; // done
+    } else {
+      stats[2] += 1; // notDone
+    }
+
+    return map;
+  }, new Map());
+  for (const [key, value] of result) {
+    done += value[1]
+    notDone += value[2]
+  }
+  return { result, total, done, notDone }
+}
+
+function calPercentage(done, total) {
+  if (done === 0 && total === 0) {
+    return 0
+  } else {
+    return (done / total) * 100
+  }
+}
+
+function transformData(mapData) {
+
+  const innerData = timelineArr.map((timeline) => {
+
+    const stats = mapData.get(timeline) ?? [0, 0, 0];
+
+    return {
+      id: timeline,
+      label: timeline.split("_").join(" "),
+      value: stats[0],
+      color: timelineColors[timeline],
+    };
+  });
+
+  const outerData = timelineArr.map((timeline) => {
+
+    const stats = mapData.get(timeline) ?? [0, 0, 0];
+
+    return [
+      {
+        label: "Done",
+        value: stats[1],
+        color: timelineColors[timeline],
+      },
+      {
+        label: "Not Done",
+        value: stats[2],
+        color: `color-mix(in srgb, ${timelineColors[timeline]}, transparent 40%)`,
+      }
+    ];
+  })
+    .flat();
+
+  return { innerData, outerData };
+}
+
+/**
+ * getTasks
+ * getTaskCategory
+ * getItems
+ * getTotalBudget
+ */
 export default function DashboardPage() {
+
+  const { user } = useContext(AuthContext);
+  const { loading: tasksLoading, error: tasksError, data: tasksData } = useTasks(user.id);
+  const { loading: itemsLoading, error: itemsError, data: itemsData } = useItems(user.id);
+  // const { loading: categoryLoading, error: categoryError, data: categoryData } = useTaskCategory(user.id, categoryId);
+  const { loading: budgetLoading, error: budgetError, data: budgetData } = useTotalBudget(user.id);
+
+  if (tasksLoading || itemsLoading || budgetLoading) {
+    return <div>Loading</div>;
+  } else if (tasksError || itemsError || budgetError) {
+    return <div>Error data</div>
+  }
+
+  const tasksMap = mapData(tasksData.getTasks)
+  const tasksMapTransformed = transformData(tasksMap.result)
+  const tasksTotal = tasksMap.total
+  const tasksDone = tasksMap.done
+  const tasksInnerData = tasksMapTransformed.innerData
+  const tasksOuterData = tasksMapTransformed.outerData
+
+  const itemsMap = mapData(itemsData.getItems.items)
+  const itemsMapTransformed = transformData(itemsMap.result)
+  const itemsTotal = itemsMap.total
+  const itemsDone = itemsMap.done
+  const itemsInnerData = itemsMapTransformed.innerData
+  const itemsOuterData = itemsMapTransformed.outerData
+
+  const tasksPercentage = calPercentage(tasksDone, tasksTotal);
+  const itemsPercentage = calPercentage(itemsDone, itemsTotal);
+
+  // ===================================================================================================
+  // ===================================================================================================
+  // ===================================================================================================
+
+  const budgetSpent = 80;
+
+  // const tasksOuterData = [
+  //   { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
+  //   { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
+  //   { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
+  //   { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
+  //   { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
+  //   { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
+  // ];
+
+  // const tasksInnerData = [
+  //   { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
+  //   { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
+  //   { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
+  // ]
+
+  // const itemsOuterData = [
+  //   { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
+  //   { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
+  //   { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
+  //   { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
+  //   { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
+  //   { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
+  // ];
+
+  // const itemsInnerData = [
+  //   { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
+  //   { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
+  //   { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
+  // ]
+
+  const timelineSeries = [
+    { curve: "linear", color: 'var(--color-success)', data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5], label: 'Food' },
+    { curve: "linear", color: 'var(--color-danger)', data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3], label: 'Decoration' },
+    { curve: "linear", color: 'var(--color-accent)', data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4], label: 'Cloths' },
+    { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
+  ]
+  const datePoints = [
+    '2023-01',
+    '2023-02',
+    '2023-03',
+    '2023-04',
+    '2023-05',
+    '2023-06',
+    '2023-07',
+    '2023-08',
+    '2023-09',
+    '2023-10',
+    '2023-11',
+  ]
+
+  const categorySeries = [
+    { value: 30, color: 'var(--color-accent)', label: 'Food' },
+    { value: 30, color: 'var(--color-danger)', label: 'Decoration' },
+    { value: 40, color: 'var(--color-primary)', label: 'Others' },
+  ]
+  // ===================================================================================================
+  // ===================================================================================================
+  // ===================================================================================================
   const date = new Date();
   const dateArray = date.toDateString().split(" ");
   const time = date.toLocaleTimeString("en-US", {
@@ -15,9 +198,6 @@ export default function DashboardPage() {
     minute: '2-digit'
   });
 
-  const tasksDone = 50;
-  const itemsDone = 70;
-  const budgetSpent = 80;
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
 
@@ -45,7 +225,6 @@ export default function DashboardPage() {
     if (budgetSpent >= 80) {
       return "var(--color-accent)";
     }
-
 
     return "var(--color-success)";
   };
@@ -80,14 +259,7 @@ export default function DashboardPage() {
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
                     // cornerRadius: 3,
-                    data: [
-                      { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-                      { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-                      { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-                      { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-                      { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-                      { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-                    ],
+                    data: tasksOuterData,
                   },
                   {
                     // startAngle: -135,
@@ -96,11 +268,7 @@ export default function DashboardPage() {
                     outerRadius: 100,
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
-                    data: [
-                      { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-                      { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-                      { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-                    ],
+                    data: tasksInnerData,
                     // arcLabel: (item) => `${item.label}`,
                   }
                 ]}
@@ -121,10 +289,24 @@ export default function DashboardPage() {
                 height={250}
 
               >
-                <PieCenterLabel color="var(--color-primary)">
-                  <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>60</tspan>
-                  <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2" > /120</tspan>
-                </PieCenterLabel>
+                {
+                  tasksTotal === 0 ? (
+                    <PieCenterLabel color="black">
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }}>
+                        No data
+                      </tspan>
+                    </PieCenterLabel>
+                  ) : (
+                    <PieCenterLabel color="var(--color-primary)">
+                      <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                        {tasksDone}
+                      </tspan>
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2">
+                        /{tasksTotal}
+                      </tspan>
+                    </PieCenterLabel>
+                  )
+                }
               </PieChart>
             </Box>
           </div>
@@ -152,14 +334,7 @@ export default function DashboardPage() {
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
                     // cornerRadius: 3,
-                    data: [
-                      { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-                      { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-                      { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-                      { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-                      { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-                      { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-                    ],
+                    data: itemsOuterData,
                   },
                   {
                     // startAngle: -135,
@@ -168,11 +343,7 @@ export default function DashboardPage() {
                     outerRadius: 100,
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
-                    data: [
-                      { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-                      { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-                      { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-                    ],
+                    data: itemsInnerData,
                     // arcLabel: (item) => `${item.label}`,
                   }
                 ]}
@@ -193,10 +364,24 @@ export default function DashboardPage() {
                 height={250}
 
               >
-                <PieCenterLabel color="var(--color-primary)">
-                  <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>60</tspan>
-                  <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2" > /120</tspan>
-                </PieCenterLabel>
+                {
+                  itemsTotal === 0 ? (
+                    <PieCenterLabel color="black">
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }}>
+                        No data
+                      </tspan>
+                    </PieCenterLabel>
+                  ) : (
+                    <PieCenterLabel color="var(--color-primary)">
+                      <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                        {itemsDone}
+                      </tspan>
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2">
+                        /{itemsTotal}
+                      </tspan>
+                    </PieCenterLabel>
+                  )
+                }
               </PieChart>
             </Box>
           </div>
@@ -207,36 +392,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  tasksDone === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(tasksDone)} />
-                    : tasksDone === 100
-                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(tasksDone)} />
-                      : <DotCircle fillColor={progressTaskColor(tasksDone)} fillBackground="none" />
+                  tasksPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(tasksPercentage)} />
+                    : tasksPercentage === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(tasksPercentage)} />
+                      : <DotCircle fillColor={progressTaskColor(tasksPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {tasksDone}%
+                      {tasksPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Tasks {status(tasksDone)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Tasks {status(tasksPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={tasksDone}
+                    value={tasksPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressTaskColor(tasksDone),
+                        backgroundColor: progressTaskColor(tasksPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(tasksDone)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(tasksPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -249,36 +434,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  itemsDone === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(itemsDone)} />
-                    : itemsDone === 100
-                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(itemsDone)} />
-                      : <DotCircle fillColor={progressTaskColor(itemsDone)} fillBackground="none" />
+                  itemsPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(itemsPercentage)} />
+                    : itemsPercentage === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(itemsPercentage)} />
+                      : <DotCircle fillColor={progressTaskColor(itemsPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {itemsDone}%
+                      {itemsPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Shopping Items {status(itemsDone)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Shopping Items {status(itemsPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={itemsDone}
+                    value={itemsPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressTaskColor(itemsDone),
+                        backgroundColor: progressTaskColor(itemsPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(itemsDone)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(itemsPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -333,27 +518,10 @@ export default function DashboardPage() {
         <div class="lg:col-span-2 p-10 w-full bg-white rounded-3xl flex flex-col">
           <p className="text-2xl text-black font-semibold pb-[16px]">Spending Timeline</p>
           <LineChart
-            series={[
-              { curve: "linear", color: 'var(--color-success)', data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5], label: 'Food' },
-              { curve: "linear", color: 'var(--color-danger)', data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3], label: 'Decoration' },
-              { curve: "linear", color: 'var(--color-accent)', data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4], label: 'Cloths' },
-              { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
-            ]}
+            series={timelineSeries}
             height={300}
             xAxis={[{
-              scaleType: 'point', data: [
-                '2023-01',
-                '2023-02',
-                '2023-03',
-                '2023-04',
-                '2023-05',
-                '2023-06',
-                '2023-07',
-                '2023-08',
-                '2023-09',
-                '2023-10',
-                '2023-11',
-              ]
+              scaleType: 'point', data: datePoints
             }]}
             slotProps={{
               legend: {
@@ -371,11 +539,7 @@ export default function DashboardPage() {
               {
                 innerRadius: 40,
                 outerRadius: 100,
-                data: [
-                  { value: 30, color: 'var(--color-accent)', label: 'Food' },
-                  { value: 30, color: 'var(--color-danger)', label: 'Decoration' },
-                  { value: 40, color: 'var(--color-primary)', label: 'Others' },
-                ],
+                data: categorySeries,
                 valueFormatter: (item) => `${item.value}%`,
                 highlightScope: { fade: 'global', highlight: 'item' },
                 faded: { innerRadius: 30, additionalRadius: -10 },
@@ -404,6 +568,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

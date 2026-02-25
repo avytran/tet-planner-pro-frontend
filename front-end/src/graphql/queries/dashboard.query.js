@@ -25,6 +25,7 @@ export const GET_ITEMS = gql`
                 price
                 quantity
                 status
+                timeline
                 duedTime
                     budget {
                         name
