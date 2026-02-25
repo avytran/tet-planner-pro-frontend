@@ -1,7 +1,7 @@
 import "./ChartsComponent.css";
 import { Gauge, gaugeClasses } from '@mui/x-charts/Gauge';
 import { Box, Typography } from '@mui/material';
-import { PieChart } from '@mui/x-charts/PieChart';
+import { PieChart } from '@mui/x-charts';
 import { LineChart } from '@mui/x-charts/LineChart';
 import PieCenterLabel from "./PieCenterLabel";
 
