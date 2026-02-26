@@ -6,13 +6,15 @@ export const GET_TASKS = gql`
             categoryId
             status
             timeline
+            duedTime
         }
     }
 `;
 
 export const GET_TASK_CATEGORY = gql`
-    query GetTaskCategoryByIdOfUser($userId: String!, $categoryId: String!) {
-        getTaskCategory: getTaskCategoryByIdOfUser(userId: $userId, categoryId: $categoryId) {
+    query GetTaskCategoriesOfUser($userId: String!) {
+        getTaskCategory: getTaskCategoriesOfUser(userId: $userId) {
+            id
             name
         }
     }
@@ -24,10 +26,12 @@ export const GET_ITEMS = gql`
             items {
                 price
                 quantity
-                status
                 timeline
+                status
+                updatedAt
                 duedTime
                 budget {
+                    id
                     name
                 }
             }

@@ -7,88 +7,9 @@ import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import { useTasks, useItems, useTaskCategory, useTotalBudget } from '../../hooks/dashboardHooks'
-
-const timelineArr = ['Pre_Tet', 'During_Tet', 'After_Tet']
-const timelineColors = {
-  'Pre_Tet': 'var(--color-success)',
-  'During_Tet': 'var(--color-primary)',
-  'After_Tet': 'var(--color-accent)'
-};
-
-function mapData(data) {
-  let total = data.length
-  let done = 0
-  let notDone = 0
-  const result = data.reduce((map, item) => {
-    const timeline = item.timeline;
-
-    if (!map.has(timeline)) {
-      map.set(timeline, [0, 0, 0]); // [total, done, notDone]
-    }
-
-    const stats = map.get(timeline);
-
-    stats[0] += 1; // total
-
-    if (item.status === "Done" || item.status === "Completed") {
-      stats[1] += 1; // done
-    } else {
-      stats[2] += 1; // notDone
-    }
-
-    return map;
-  }, new Map());
-  for (const [key, value] of result) {
-    done += value[1]
-    notDone += value[2]
-  }
-  return { result, total, done, notDone }
-}
-
-function transformData(mapData) {
-
-  const innerData = timelineArr.map((timeline) => {
-
-    const stats = mapData.get(timeline) ?? [0, 0, 0];
-
-    return {
-      id: timeline,
-      label: timeline.split("_").join(" "),
-      value: stats[0],
-      color: timelineColors[timeline],
-    };
-  });
-
-  const outerData = timelineArr.map((timeline) => {
-
-    const stats = mapData.get(timeline) ?? [0, 0, 0];
-
-    return [
-      {
-        label: "Done",
-        value: stats[1],
-        color: timelineColors[timeline],
-      },
-      {
-        label: "Not Done",
-        value: stats[2],
-        color: `color-mix(in srgb, ${timelineColors[timeline]}, transparent 40%)`,
-      }
-    ];
-  })
-    .flat();
-
-  return { innerData, outerData };
-}
-
-function calPercentage(done, total) {
-  if (done === 0 && total === 0) {
-    return 0
-  } else {
-    return (done / total) * 100
-  }
-}
+import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
+import { useTasks, useItems, useTaskCategory, useTotalBudget } from '../../hooks/useDashboardData';
+import { mapData, transformData, calPercentage, mapDataDued, reminderNoti, progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
 
 /**
  * getTasks
@@ -101,14 +22,23 @@ export default function DashboardPage() {
   const { user } = useContext(AuthContext);
   const { loading: tasksLoading, error: tasksError, data: tasksData } = useTasks(user.id);
   const { loading: itemsLoading, error: itemsError, data: itemsData } = useItems(user.id);
-  // const { loading: categoryLoading, error: categoryError, data: categoryData } = useTaskCategory(user.id, categoryId);
+  const { loading: categoryLoading, error: categoryError, data: categoryData } = useTaskCategory(user.id);
   const { loading: budgetLoading, error: budgetError, data: budgetData } = useTotalBudget(user.id);
 
-  if (tasksLoading || itemsLoading || budgetLoading) {
-    return <div>Loading</div>;
-  } else if (tasksError || itemsError || budgetError) {
-    return <div>Error data</div>
+  if (tasksLoading || itemsLoading || categoryLoading || budgetLoading) {
+    return (
+      <div className="flex justify-center items-center p-20">
+        Loading data...
+      </div>);
+  } else if (tasksError || itemsError || categoryError || budgetError) {
+    return (
+      <div className="flex justify-center items-center p-20">
+        Fail to load data
+      </div>)
   }
+
+  // console.log(tasksData.getTasks)
+  // console.log(itemsData.getItems.items)
 
   const tasksMap = mapData(tasksData.getTasks)
   const tasksMapTransformed = transformData(tasksMap.result)
@@ -124,73 +54,91 @@ export default function DashboardPage() {
   const itemsInnerData = itemsMapTransformed.innerData
   const itemsOuterData = itemsMapTransformed.outerData
 
+  const itemsCompleted = itemsData.getItems.items.filter(item => item.status === "Completed")
+  const itemsSpent = itemsCompleted.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  const categoryIdMap = Object.fromEntries(
+    categoryData.getTaskCategory.map(c => [c.id, c.name])
+  );
+
+  const MAX_CATEGORY = 3;
+
+  const finalMap = Object.entries(
+    tasksData.getTasks.reduce((acc, task) => {
+      acc[task.categoryId] = (acc[task.categoryId] || 0) + 1;
+      return acc;
+    }, {})
+  )
+    .sort((a, b) => b[1] - a[1])
+    .reduce((acc, [id, count], index) => {
+      if (index < MAX_CATEGORY) {
+        acc[id] = count;
+      } else {
+        acc.others = (acc.others || 0) + count;
+      }
+      return acc;
+    }, {});
+
+  const colors = [
+    'var(--color-primary)',
+    'var(--color-accent)',
+    'var(--color-success)',
+    'var(--color-highlight)'
+  ];
+
+  const categorySeries = Object.entries(finalMap).map(([id, value], index) => ({
+    id,
+    value: calPercentage(value, tasksTotal),
+    label: id === "others" ? "Others" : categoryIdMap[id],
+    color: colors[index % colors.length]
+  }));
+
   const tasksPercentage = calPercentage(tasksDone, tasksTotal);
   const itemsPercentage = calPercentage(itemsDone, itemsTotal);
+  const budgetSpentPercentage = calPercentage(itemsSpent, budgetData.getTotalBudget.totalBudget);
 
-  // ===================================================================================================
-  // ===================================================================================================
-  // ===================================================================================================
+  const budgetIdLabel = Object.fromEntries(
+    [...new Map(itemsCompleted.map(item => [item.budget.id, item.budget.name]))]
+  );
 
-  const budgetSpent = 80;
+  const budgetIdArr = Object.keys(budgetIdLabel);
+  let dateMapItems = new Map();
 
-  // const tasksOuterData = [
-  //   { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-  //   { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-  //   { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-  //   { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-  //   { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-  //   { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-  // ];
+  itemsCompleted.forEach(item => {
+    const day = new Date(item.updatedAt).toISOString().split('T')[0];
+    const value = item.price * item.quantity;
+    const budgetId = item.budget.id;
 
-  // const tasksInnerData = [
-  //   { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-  //   { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-  //   { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-  // ]
+    if (!dateMapItems.has(day)) {
+      const dayData = Object.fromEntries(
+        budgetIdArr.map(id => [id, 0])
+      );
+      dateMapItems.set(day, dayData);
+    }
 
-  // const itemsOuterData = [
-  //   { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-  //   { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-  //   { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-  //   { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-  //   { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-  //   { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-  // ];
+    const existing = dateMapItems.get(day);
+    existing[budgetId] += value;
+  });
 
-  // const itemsInnerData = [
-  //   { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-  //   { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-  //   { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-  // ]
+  const sortedMap = new Map();
+  for (let [date, data] of dateMapItems) {
+    const sortedData = {};
+    budgetIdArr.forEach(id => {
+      sortedData[id] = data[id] || 0;
+    });
+    sortedMap.set(date, sortedData);
+  }
 
-  const timelineSeries = [
-    { curve: "linear", color: 'var(--color-success)', data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5], label: 'Food' },
-    { curve: "linear", color: 'var(--color-danger)', data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3], label: 'Decoration' },
-    { curve: "linear", color: 'var(--color-accent)', data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4], label: 'Cloths' },
-    { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
-  ]
-  const datePoints = [
-    '2023-01',
-    '2023-02',
-    '2023-03',
-    '2023-04',
-    '2023-05',
-    '2023-06',
-    '2023-07',
-    '2023-08',
-    '2023-09',
-    '2023-10',
-    '2023-11',
-  ]
+  // Get sorted date points
+  const datePoints = [...dateMapItems.keys()].sort();
 
-  const categorySeries = [
-    { value: 30, color: 'var(--color-accent)', label: 'Food' },
-    { value: 30, color: 'var(--color-danger)', label: 'Decoration' },
-    { value: 40, color: 'var(--color-primary)', label: 'Others' },
-  ]
-  // ===================================================================================================
-  // ===================================================================================================
-  // ===================================================================================================
+  const timelineSeries = budgetIdArr.map((budgetId, index) => ({
+    id: index,
+    curve: "linear",
+    data: datePoints.map(date => dateMapItems.get(date)?.[budgetId] || 0),
+    label: budgetIdLabel[budgetId]
+  }));
+
   const date = new Date();
   const dateArray = date.toDateString().split(" ");
   const time = date.toLocaleTimeString("en-US", {
@@ -200,34 +148,6 @@ export default function DashboardPage() {
 
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
-
-  const progressTaskColor = (tasksDone) => {
-    if (tasksDone === 0) {
-      return "#AEA9B1";
-    }
-
-    if (tasksDone >= 70) {
-      return "var(--color-success)";
-    }
-
-    return "#0043CE";
-  };
-
-  const progressBudgetColor = (budgetSpent) => {
-    if (budgetSpent === 0) {
-      return "#AEA9B1";
-    }
-
-    if (budgetSpent >= 95) {
-      return "var(--color-danger)";
-    }
-
-    if (budgetSpent >= 80) {
-      return "var(--color-accent)";
-    }
-
-    return "var(--color-success)";
-  };
 
   return (
     <div className="dashboard-container bg-bg px-4 py-12 md:p-20">
@@ -476,36 +396,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  budgetSpent === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressBudgetColor(budgetSpent)} />
-                    : budgetSpent >= 80
-                      ? <ExclamationCircle fillColor="white" fillBackground={progressBudgetColor(budgetSpent)} />
-                      : <DotCircle fillColor={progressBudgetColor(budgetSpent)} fillBackground="none" />
+                  budgetSpentPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressBudgetColor(budgetSpentPercentage)} />
+                    : budgetSpentPercentage >= 80
+                      ? <ExclamationCircle fillColor="white" fillBackground={progressBudgetColor(budgetSpentPercentage)} />
+                      : <DotCircle fillColor={progressBudgetColor(budgetSpentPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {budgetSpent}%
+                      {budgetSpentPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Budget {statusBudget(budgetSpent)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Budget {statusBudget(budgetSpentPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={budgetSpent}
+                    value={budgetSpentPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressBudgetColor(budgetSpent),
+                        backgroundColor: progressBudgetColor(budgetSpentPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressBudgetColor(budgetSpent)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressBudgetColor(budgetSpentPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -520,6 +440,7 @@ export default function DashboardPage() {
           <LineChart
             series={timelineSeries}
             height={300}
+            colors={rainbowSurgePalette}
             xAxis={[{
               scaleType: 'point', data: datePoints
             }]}
@@ -554,17 +475,12 @@ export default function DashboardPage() {
                 padding: 0,
               },
             }}
-          >
-            {/* <PieCenterLabel color="var(--color-primary)" fontSize={13}>
-              Categories
-            </PieCenterLabel> */}
-          </PieChart>
-
+          />
           <div
             className={"px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col"}
           >
-            <p className={"text-base font-semibold text-white"}>Notification</p>
-            <p className={"text-base font-light text-left text-white"}>You have 2 tasks, 3 items to do today.</p>
+            <p className={"text-base font-semibold text-white"}>Reminder</p>
+            <p className={"text-base font-light text-left text-white"}>{reminderNoti(mapDataDued(tasksData.getTasks),mapDataDued(itemsData.getItems.items))}</p>
           </div>
         </div>
       </div>
