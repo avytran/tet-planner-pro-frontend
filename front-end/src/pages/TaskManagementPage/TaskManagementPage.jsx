@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useQuery } from "@apollo/client/react";
 import {
-  ChevronDownIcon,
   MagnifyingGlassIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
-import { ShoppingFilter } from "../../components/ShoppingFilter";
 import {
   GET_TASKS_OF_USER
 } from "../../graphql/queries/task.query";
@@ -24,93 +22,13 @@ import { findItemById } from "@/utils/findItemById";
 import { CHART_COLORS } from "@/constants/taskConstant";
 import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
 
-const MOCK_TASKS = [
-  // {
-  //   id: "task-1",
-  //   title: "Planning Mâm Ngũ Quả",
-  //   date: "2026-02-14",
-  //   category: "Food",
-  //   priority: "Medium",
-  //   status: "To Do",
-  //   timeline: "Before Tet",
-  //   budgetStatus: "Planning",
-  //   totalCost: 1200000,
-  //   barColor: "var(--color-accent)",
-  // },
-  // {
-  //   id: "task-2",
-  //   title: "Mua Hoa Trang Trí",
-  //   date: "2026-02-14",
-  //   category: "Decoration",
-  //   priority: "Low",
-  //   status: "In Progress",
-  //   timeline: "30 Tet",
-  //   budgetStatus: "Planning",
-  //   totalCost: 600000,
-  //   barColor: "var(--color-primary)",
-  // },
-  // {
-  //   id: "task-3",
-  //   title: "Chuẩn Bị Giỏ Quà",
-  //   date: "2026-02-14",
-  //   category: "Gift",
-  //   priority: "High",
-  //   status: "Done",
-  //   timeline: "Mung 1-3",
-  //   budgetStatus: "Completed",
-  //   totalCost: 1800000,
-  //   barColor: "var(--color-success)",
-  // },
-  // {
-  //   id: "task-4",
-  //   title: "Mua Áo Dài",
-  //   date: "2026-02-15",
-  //   category: "Cloth",
-  //   priority: "Medium",
-  //   status: "To Do",
-  //   timeline: "Before Tet",
-  //   budgetStatus: "Planning",
-  //   totalCost: 900000,
-  //   barColor: "var(--color-accent)",
-  // },
-  // {
-  //   id: "task-5",
-  //   title: "Lên Danh Sách Lì Xì",
-  //   date: "2026-02-16",
-  //   category: "Gift",
-  //   priority: "Low",
-  //   status: "In Progress",
-  //   timeline: "30 Tet",
-  //   budgetStatus: "Planning",
-  //   totalCost: 2500000,
-  //   barColor: "var(--color-primary)",
-  // },
-  // {
-  //   id: "task-6",
-  //   title: "Dọn Dẹp Sau Tết",
-  //   date: "2026-02-18",
-  //   category: "Decoration",
-  //   priority: "Low",
-  //   status: "Done",
-  //   timeline: "Mung 1-3",
-  //   budgetStatus: "Completed",
-  //   totalCost: 400000,
-  //   barColor: "var(--color-success)",
-  // },
-];
-
-const SORT_OPTIONS = {
-  date: "Date",
-  price: "Price",
-  quantity: "Quantity",
-};
+import { TASKS_PER_PAGE } from "@/constants/taskConstant";
 
 export default function TaskManagementPage() {
   const { user } = useAuth();
-  const [tasks, setTasks] = useState(MOCK_TASKS);
+  const [tasks, setTasks] = useState([]);
 
   const [searchValue, setSearchValue] = useState("");
-  const [sortBy, setSortBy] = useState("date");
   const [filters, setFilters] = useState({
     status: [],
     timeline: [],
@@ -120,6 +38,7 @@ export default function TaskManagementPage() {
 
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const {
     data: tasksData,
@@ -128,18 +47,27 @@ export default function TaskManagementPage() {
   } = useQuery(GET_TASKS_OF_USER, {
     variables: {
       userId: user?.id,
+      params: {
+        page: currentPage,
+        pageSize: TASKS_PER_PAGE
+      }
     },
     skip: !user?.id,
-    fetchPolicy: "network-only",
   });
+
+  const totalPages = tasksData?.getTasksOfUser?.totalPages || 1;
+
+  // Reset page when filter/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchValue, filters]);
 
   // Format Task
   useEffect(() => {
-    if (!Array.isArray(tasksData?.getTasksOfUser)) {
+    if (!Array.isArray(tasksData?.getTasksOfUser.tasks)) {
       return;
     }
-
-    setTasks(tasksData.getTasksOfUser.map(formatTask));
+    setTasks(tasksData.getTasksOfUser.tasks.map(formatTask));
   }, [tasksData]);
 
   const categories = useMemo(() => {
@@ -182,12 +110,8 @@ export default function TaskManagementPage() {
       );
     });
 
-    return [...filtered].sort((left, right) => {
-      if (sortBy === "price") return right.totalCost - left.totalCost;
-      if (sortBy === "quantity") return left.title.localeCompare(right.title);
-      return new Date(left.date).getTime() - new Date(right.date).getTime();
-    });
-  }, [filters, searchValue, sortBy, tasks]);
+    return filtered;
+  }, [filters, searchValue, tasks]);
 
   const chartData = useMemo(() => {
     const totals = categories.map((category, index) => {
@@ -261,12 +185,6 @@ export default function TaskManagementPage() {
           </div>
         </div>
 
-        {isTasksLoading && (
-          <p className="mb-4 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-primary-strong/70">
-            Loading tasks from server...
-          </p>
-        )}
-
         {tasksError && (
           <p className="mb-4 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
             Failed to load tasks from backend. Showing local data.
@@ -284,7 +202,7 @@ export default function TaskManagementPage() {
 
           {/* Mid - Task List */}
           <div className="min-w-0 flex-1">
-            {/* Search & Sort */}
+            {/* Search */}
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <div className="relative min-w-[260px] flex-1">
                 <input
@@ -296,24 +214,6 @@ export default function TaskManagementPage() {
                 />
                 <MagnifyingGlassIcon className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-primary/70" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-primary-strong/80">Sort by</span>
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                    className="appearance-none rounded-lg border border-primary/20 bg-surface py-2 pl-3 pr-8 text-sm text-primary-strong outline-none"
-                  >
-                    {Object.entries(SORT_OPTIONS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDownIcon className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-primary/70" />
-                </div>
-              </div>
             </div>
 
             {/* List */}
@@ -323,6 +223,7 @@ export default function TaskManagementPage() {
                   key={"task-" + task.id}
                   task={task}
                   handleOpenEditTaskForm={handleOpenEditTaskForm}
+                  currentPage={currentPage}
                 />
               ))}
 
@@ -334,11 +235,35 @@ export default function TaskManagementPage() {
             </ul>
 
             {/* Pagination */}
-            <div className="mt-5 flex justify-center text-sm text-primary">
-              <button type="button" className="inline-flex items-center gap-2">
-                <span>‹</span>
-                <span>Page</span>
-                <span>›</span>
+            <div className="mt-6 flex justify-center gap-2">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === page ? "bg-primary text-white" : "border"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Next
               </button>
             </div>
           </div>
@@ -361,7 +286,7 @@ export default function TaskManagementPage() {
         <MutateTaskDialog
           selectedTask={findItemById(tasks, selectedTaskId)}
           handleCloseTaskForm={handleCloseTaskForm}
-          categories={categories}
+          currentPage={currentPage}
         />
       )}
     </section>

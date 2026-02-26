@@ -38,3 +38,12 @@ export const DELETE_TASK = gql`
         }
     }
 `;
+
+export const PATCH_TASK = gql`
+    mutation DeleteTaskCategoryOfUser($userId: String!, $taskId: String!, $input: TaskInput!) {
+        patchTaskOfUser(userId: $userId, taskId: $taskId, input: $input) {
+            id
+            status
+        }
+    }
+`;

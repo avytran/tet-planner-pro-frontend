@@ -52,3 +52,5 @@ export const CHART_COLORS = [
   "var(--color-warning)",
   "var(--color-info)",
 ]
+
+export const TASKS_PER_PAGE = 10;

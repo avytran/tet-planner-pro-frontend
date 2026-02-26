@@ -1,5 +1,5 @@
 import {
-  ChevronDownIcon,
+  CheckIcon,
 } from "@heroicons/react/24/outline";
 
 import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
@@ -40,7 +40,7 @@ function OverviewRow({ title, value, helperText, colorClass, isLast = false }) {
     <div className={isLast ? "" : "mb-4"}>
       <div className="mb-1 flex items-center justify-between">
         <p className="text-sm font-medium text-primary-strong">{title}</p>
-        <ChevronDownIcon className="h-4 w-4 text-primary-strong/75" />
+        <CheckIcon className="h-4 w-4 text-primary-strong/75" />
       </div>
       <p className="mb-1 text-xs text-primary-strong/75">{value}%</p>
       <div className="h-2 overflow-hidden rounded-full bg-primary/10">

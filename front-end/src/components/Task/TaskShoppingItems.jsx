@@ -67,13 +67,6 @@ export const TaskShoppingItems = ({ taskId }) => {
             }
             <div className="flex items-center justify-between">
                 <h4 className="font-semibold text-primary">Shopping Items</h4>
-                {/* <button
-                                type="button"
-                                onClick={openItemForm}
-                                className="text-sm text-accent hover:text-accent-strong font-medium"
-                            >
-                                + Add Item
-                            </button> */}
             </div>
 
             <div

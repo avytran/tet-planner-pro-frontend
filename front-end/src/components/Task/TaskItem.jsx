@@ -1,23 +1,91 @@
 import {
-  CalendarDaysIcon,
-  ChevronDownIcon,
-  PencilSquareIcon,
-  TrashIcon,
+    CalendarDaysIcon,
+    ChevronDownIcon,
+    PencilSquareIcon,
+    TrashIcon,
 } from "@heroicons/react/24/outline";
 
 import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-
-import { PRIORITY_CLASS, STATUS_CLASS, TASK_STATUS_OPTIONS } from "@/constants/taskConstant";
-import { DELETE_TASK } from "@/graphql/mutations/task.mutation";
 import { useAuth } from "@/hooks/useAuth";
+import { useMutation } from "@apollo/client/react";
+import { DELETE_TASK, PATCH_TASK } from "@/graphql/mutations/task.mutation";
+import { GET_TASKS_OF_USER } from "@/graphql/queries/task.query";
 
+import { TASKS_PER_PAGE } from "@/constants/taskConstant";
+import { PRIORITY_CLASS, STATUS_CLASS, TASK_STATUS_OPTIONS } from "@/constants/taskConstant";
 import { ConfirmModel } from "./ConfirmModel";
 
-export const TaskItem = ({ task, handleOpenEditTaskForm }) => {
+export const TaskItem = ({ task, handleOpenEditTaskForm, currentPage }) => {
     const { user } = useAuth();
-    const [deleteTask] = useMutation(DELETE_TASK);
     const [openConfirm, setOpenConfirm] = useState(false);
+
+    const variables = {
+        userId: user.id,
+        params: {
+            page: currentPage,
+            pageSize: TASKS_PER_PAGE,
+        },
+    };
+
+    const [deleteTask] = useMutation(DELETE_TASK, {
+        update(cache, { data }) {
+            if (!data?.deleteTaskOfUser) return;
+
+            const existing = cache.readQuery({
+                query: GET_TASKS_OF_USER,
+                variables: variables,
+            });
+
+            if (!existing) return;
+
+            cache.writeQuery({
+                query: GET_TASKS_OF_USER,
+                variables: variables,
+                data: {
+                    getTasksOfUser: {
+                        ...existing.getTasksOfUser,
+                        tasks: existing.getTasksOfUser.tasks.filter(
+                            (t) => t.id !== task.id
+                        ),
+                    },
+                },
+            });
+        },
+    });
+
+    const [patchTask] = useMutation(PATCH_TASK, {
+        update(cache, { data }) {
+
+            if (!data?.patchTaskOfUser) return;
+
+            const updatedTask = data.patchTaskOfUser;
+
+            const existing = cache.readQuery({
+                query: GET_TASKS_OF_USER,
+                variables: variables,
+            });
+
+            if (!existing) return;
+
+            cache.writeQuery({
+                query: GET_TASKS_OF_USER,
+                variables: variables,
+                data: {
+                    getTasksOfUser: {
+                        ...existing.getTasksOfUser,
+                        tasks: existing.getTasksOfUser.tasks.map((task) =>
+                            task.id === updatedTask.id
+                                ? {
+                                    ...task,
+                                    ...updatedTask,
+                                }
+                                : task
+                        ),
+                    },
+                },
+            });
+        },
+    });
 
     const handleDeleteTask = async () => {
         await deleteTask({
@@ -30,13 +98,25 @@ export const TaskItem = ({ task, handleOpenEditTaskForm }) => {
         setOpenConfirm(false);
     }
 
+    const onStatusChange = async (taskId, status) => {
+        await patchTask({
+            variables: {
+                userId: user.id,
+                taskId,
+                input: {
+                    status,
+                },
+            },
+        });
+    };
+
     return (
         <li
             className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
         >
             {
                 openConfirm && (
-                    <ConfirmModel 
+                    <ConfirmModel
                         setOpenConfirm={setOpenConfirm}
                         title="Delete Task"
                         msg="Are you sure you want to delete this task?"
