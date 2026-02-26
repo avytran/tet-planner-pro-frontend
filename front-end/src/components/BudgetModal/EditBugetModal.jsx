@@ -1,12 +1,6 @@
 import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
-import { useMutation } from "@apollo/client/react";
-import {
-  CREATE_BUDGET,
-  UPDATE_BUDGET,
-} from "@/graphql/mutations/budget.mutation";
 import { useAuth } from "@/hooks/useAuth";
-import { GET_BUDGETS } from "@/graphql/queries/budget.query";
 import {
   createBudgetThunk,
   updateBudgetThunk,

@@ -1,14 +1,10 @@
 import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
-import { useMutation } from "@apollo/client/react";
-import { UPDATE_TOTAL_BUDGET } from "@/graphql/mutations/budget.mutation";
 import { validateTotalBudget } from "@/utils/budgetValidation";
 import { useAuth } from "@/hooks/useAuth";
-import { GET_TOTAL_BUDGET } from "@/graphql/queries/budget.query";
 import {
   selectTotalAllocation,
   selectTotalBudget,
-  selectTotalSpending,
 } from "@/features/budget/budgetSelectors";
 import { useDispatch, useSelector } from "react-redux";
 import { updateTotalBudgetThunk } from "@/features/budget/budgetThunks";

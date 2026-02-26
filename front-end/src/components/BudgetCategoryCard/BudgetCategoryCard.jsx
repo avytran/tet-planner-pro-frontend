@@ -4,20 +4,13 @@ import {
   TrashIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
-// import { Progress } from "@/components/ui/progress";
-import React, { useState } from "react";
+import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { useMutation } from "@apollo/client/react";
-import {
-  DELETE_BUDGET,
-  UPDATE_TOTAL_BUDGET,
-} from "@/graphql/mutations/budget.mutation";
 import { useAuth } from "@/hooks/useAuth";
 import EditBudgetModal from "../BudgetModal/EditBugetModal";
-import { GET_BUDGETS } from "@/graphql/queries/budget.query";
 import { useDispatch } from "react-redux";
 import { deleteBudgetThunk } from "@/features/budget/budgetThunks";
 
