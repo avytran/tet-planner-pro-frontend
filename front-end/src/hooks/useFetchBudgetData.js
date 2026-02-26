@@ -1,45 +1,48 @@
 import { GET_BUDGETS, GET_TOTAL_BUDGET } from "@/graphql/queries/budget.query";
-import { useApolloClient } from "@apollo/client/react";
-import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@apollo/client/react";
+import { useMemo } from "react";
 
-export function useBudgetData(userId) {
-  const client = useApolloClient();
+export const useBudgetData = (userId) => {
+  const {
+    data: totalData,
+    loading: loadingTotal,
+    error: errorTotal,
+  } = useQuery(GET_TOTAL_BUDGET, {
+    variables: { userId },
+    skip: !userId,
+    fetchPolicy: "network-only",
+  });
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [totalBudget, setTotalBudget] = useState(0);
-  const [budgets, setBudgets] = useState([]);
+  const {
+    data: budgetsData,
+    loading: loadingBudgets,
+    error: errorBudgets,
+  } = useQuery(GET_BUDGETS, {
+    variables: { userId },
+    skip: !userId,
+    fetchPolicy: "network-only",
+  });
 
-  useEffect(() => {
-    if (!userId) return;
+  const totalBudget = totalData?.getTotalBudget?.totalBudget ?? 0;
 
-    const fetch = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [budgetRes, budgetsRes] = await Promise.all([
-          client.query({ query: GET_TOTAL_BUDGET, variables: { userId } }),
-          client.query({ query: GET_BUDGETS, variables: { userId } }),
-        ]);
-
-        setTotalBudget(budgetRes?.data?.getTotalBudget?.totalBudget ?? 0);
-        setBudgets(budgetsRes?.data?.getBudgetsOfUser ?? []);
-      } catch (err) {
-        console.error(err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetch();
-  }, [userId]);
+  const budgets = budgetsData?.getBudgetsOfUser ?? [];
 
   const totalSpending = useMemo(() => {
-    return budgets.reduce((sum, item) => sum + item.summary, 0);
+    return budgets.reduce((sum, item) => sum + (item.summary || 0), 0);
   }, [budgets]);
+  const totalAllocation = useMemo(() => {
+    return budgets.reduce((sum, item) => sum + (item.allocatedAmount || 0), 0);
+  }, [budgets]);
+
   const remaining = totalBudget - totalSpending;
 
-  return { totalBudget, totalSpending, remaining, budgets, loading, error };
-}
+  return {
+    totalBudget,
+    totalSpending,
+    totalAllocation,
+    remaining,
+    budgets,
+    loading: loadingTotal || loadingBudgets,
+    error: errorTotal || errorBudgets,
+  };
+};

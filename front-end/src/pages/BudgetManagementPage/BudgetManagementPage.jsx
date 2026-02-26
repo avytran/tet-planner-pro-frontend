@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import ShoppingListCard from "../../components/ShoppingListCard/ShoppingListCard.jsx";
 import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import ShoppingListItem from "../../components/ShoppingListItem/ShoppingListItem.jsx";
@@ -11,12 +11,16 @@ import { Typography } from "@mui/material";
 import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { LineChart } from "@mui/x-charts/LineChart";
 import CommonButton from "../../components/Button/CommonButton.jsx";
-import EditTotalBudgetModal from "@/components/EditBudgetModal/EditTotalBudgetModal.jsx";
+import EditTotalBudgetModal from "@/components/BudgetModal/EditTotalBudgetModal.jsx";
 
 import { useAuth } from "@/hooks/useAuth.js";
+import EditBudgetModal from "@/components/BudgetModal/EditBugetModal.jsx";
+import { AuthContext } from "@/context/AuthContext.jsx";
 import { useBudgetData } from "@/hooks/useFetchBudgetData.js";
-import { useShoppingItemsByTimeline } from "@/hooks/useShoppingItemsGrByTime.js";
-import { useTopCostShoppingItems } from "@/hooks/useTopCostShoppingItems.js";
+import {
+  useShoppingItemsByTimeline,
+  useTopCostShoppingItems,
+} from "@/hooks/useShoppingItems.js";
 
 const STATUS_CONFIG = {
   safe: {
@@ -93,10 +97,12 @@ const lineChartData = [
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
-
+  // const { logout } = useContext(AuthContext);
+  // logout();
   const {
     totalBudget,
     totalSpending,
+    totalAllocation,
     remaining,
     budgets,
     loading: budgetLoading,
@@ -119,6 +125,7 @@ export default function BudgetManagementPage() {
   } = useTopCostShoppingItems(user.id);
 
   const [showTotalDialog, setShowTotalDialog] = useState(false);
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
   // const value = 0;
   const percent =
     totalBudget > 0 ? ((remaining / totalBudget) * 100).toFixed(2) : 0;
@@ -135,7 +142,7 @@ export default function BudgetManagementPage() {
   const { basedColor, fadedColor, messageTitle, messageDescription } =
     STATUS_CONFIG[statusKey];
 
-  const finalData = useMemo(() => {
+  const budgetDistribution = useMemo(() => {
     if (!totalBudget || totalBudget === 0) return [];
 
     const renderedData = budgets.map((item, index) => ({
@@ -169,7 +176,11 @@ export default function BudgetManagementPage() {
       </div>
     );
 
-  if (budgetError || shoppingItemsError || topShoppingItemsError)
+  if (
+    (budgetError && budgetError.message !== "Budget not found") ||
+    shoppingItemsError ||
+    topShoppingItemsError
+  )
     return (
       <div className="flex justify-center items-center p-20">
         Fail to load data
@@ -194,7 +205,7 @@ export default function BudgetManagementPage() {
                       {
                         innerRadius: 50,
                         outerRadius: 100,
-                        data: finalData,
+                        data: budgetDistribution,
                         valueFormatter: (item) => `${item.value}%`,
                         highlightScope: { fade: "global", highlight: "item" },
                         faded: { innerRadius: 30, additionalRadius: -10 },
@@ -243,17 +254,11 @@ export default function BudgetManagementPage() {
                     width={256}
                     height={256}
                     value={remaining}
-                    valueMax={totalBudget}
+                    valueMax={totalBudget || 1}
                     startAngle={-135}
                     endAngle={135}
                     cornerRadius="50%"
-                    text={({ value, valueMax }) => {
-                      const formatted = (
-                        totalBudget - remaining
-                      ).toLocaleString("en-US");
-                      const str = `You've spent \n ${formatted} VND`;
-                      return str;
-                    }}
+                    text={`You've spent \n ${totalSpending.toLocaleString("en-US")} VND`}
                     sx={{
                       [`& .${gaugeClasses.valueText}`]: {
                         fontSize: 15,
@@ -299,21 +304,23 @@ export default function BudgetManagementPage() {
                 textColor={"text-white"}
               />
               <div>
-                <p className="text-2xl font-semibold mb-4">
-                  Hight-Impact Items
-                </p>
-                <ul className="flex flex-col gap-4">
-                  {topCostShoppingItems.slice(0, 3).map((item, index) => (
-                    <ShoppingListItem
-                      key={item.id}
-                      name={item.name}
-                      price={item.price}
-                      quantity={item.quantity}
-                      bgColor={colors[index]}
-                      textColor={"text-white"}
-                    />
-                  ))}
-                </ul>
+                <p className="text-2xl font-semibold mb-4">High-Impact Items</p>
+                {topCostShoppingItems.length > 0 ? (
+                  <ul className="flex flex-col gap-4">
+                    {topCostShoppingItems.slice(0, 3).map((item, index) => (
+                      <ShoppingListItem
+                        key={item.id}
+                        name={item.name}
+                        price={item.price}
+                        quantity={item.quantity}
+                        bgColor={colors[index]}
+                        textColor={"text-white"}
+                      />
+                    ))}
+                  </ul>
+                ) : (
+                  <p>No shoppping items yet</p>
+                )}
               </div>
             </div>
           </div>
@@ -347,8 +354,8 @@ export default function BudgetManagementPage() {
           </p>
           <CommonButton
             leadingIcon={<PlusIcon className="h-5 w-5" />}
-            label={"Add item"}
-            onClick={() => alert("Button clicked!")}
+            label={"Add budget"}
+            onClick={() => setShowBudgetDialog(true)}
             color={"accent"}
           />
           <ul
@@ -359,6 +366,7 @@ export default function BudgetManagementPage() {
               budgets.map((category, index) => (
                 <BudgetCategoryCard
                   key={index}
+                  id={category.id}
                   category={category.name}
                   amountSpent={category.summary}
                   totalAmount={category.allocatedAmount}
@@ -480,11 +488,16 @@ export default function BudgetManagementPage() {
 
       {showTotalDialog && (
         <EditTotalBudgetModal
-          onSave={() => {
-            alert("Saved!");
-            setShowTotalDialog(false);
-          }}
+          currentBudget={totalBudget}
           onClose={() => setShowTotalDialog(false)}
+          totalAllocation={totalAllocation}
+        />
+      )}
+      {showBudgetDialog && (
+        <EditBudgetModal
+          type={"Add"}
+          totalBudget={totalBudget}
+          onClose={() => setShowBudgetDialog(false)}
         />
       )}
     </div>

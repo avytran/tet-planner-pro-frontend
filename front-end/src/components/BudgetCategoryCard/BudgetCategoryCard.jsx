@@ -5,18 +5,29 @@ import {
   WalletIcon,
 } from "@heroicons/react/24/outline";
 // import { Progress } from "@/components/ui/progress";
-import React from "react";
+import React, { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import { useMutation } from "@apollo/client/react";
+import {
+  DELETE_BUDGET,
+  UPDATE_TOTAL_BUDGET,
+} from "@/graphql/mutations/budget.mutation";
+import { useAuth } from "@/hooks/useAuth";
+import EditBudgetModal from "../BudgetModal/EditBugetModal";
 
 export default function BudgetCategoryCard({
+  id,
   category,
   amountSpent,
   totalAmount,
   itemsCount,
 }) {
+  const { user } = useAuth();
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+
   const remainingAmount = totalAmount - amountSpent;
   const percentageUsed = ((amountSpent / totalAmount) * 100).toFixed(2);
   const percentegeRemain = Number((100 - percentageUsed).toFixed(2));
@@ -26,13 +37,37 @@ export default function BudgetCategoryCard({
   } else if (percentageUsed > 80) {
     color = "danger";
   }
+
+  const [handleDeleteBudget] = useMutation(DELETE_BUDGET);
+  const onDeleteBudget = async () => {
+    try {
+      await handleDeleteBudget({
+        variables: {
+          deleteBudgetOfUserId: id,
+          userId: user.id,
+        },
+      });
+    } catch (err) {
+      const message = err.networkError
+        ? "Server error. Please try again."
+        : "Update failed. Please try again.";
+      alert(err);
+    }
+  };
+
   return (
     <div className="p-10 w-xs md:w-sm bg-white rounded-[40px] flex flex-col gap-4 shrink-0 ">
       <div className="flex ">
-        <button className=" cursor-pointer p-2 rounded-xl hover:bg-bg">
+        <button
+          className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
+          onClick={() => setShowBudgetDialog(true)}
+        >
           <PencilIcon className="w-5 h-5  " />
         </button>
-        <button className=" cursor-pointer p-2 rounded-xl hover:bg-bg">
+        <button
+          className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
+          onClick={onDeleteBudget}
+        >
           <TrashIcon className="w-5 h-5  " />
         </button>
       </div>
@@ -87,7 +122,7 @@ export default function BudgetCategoryCard({
       </div>
       <div className="flex justify-between relative">
         <CommonButton
-          label={"Detail"}
+          label={"Shopping List"}
           trailingIcon={<ArrowRightIcon className="h-5 w-5" />}
         />
         <div className="flex">
@@ -100,6 +135,16 @@ export default function BudgetCategoryCard({
           </div>
         </div>
       </div>
+      {showBudgetDialog && (
+        <EditBudgetModal
+          budgetName={category}
+          currentBudget={totalAmount}
+          type={"Edit"}
+          // totalBudget={totalBudget}
+          onClose={() => setShowBudgetDialog(false)}
+          id={id}
+        />
+      )}
     </div>
   );
 }

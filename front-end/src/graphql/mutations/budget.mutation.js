@@ -10,3 +10,34 @@ export const UPDATE_TOTAL_BUDGET = gql`
     }
   }
 `;
+export const DELETE_BUDGET = gql`
+  mutation DeleteBudgetOfUser(
+    $deleteBudgetOfUserId: String!
+    $userId: String!
+  ) {
+    deleteBudgetOfUser(id: $deleteBudgetOfUserId, userId: $userId) {
+      message
+    }
+  }
+`;
+export const CREATE_BUDGET = gql`
+  mutation CreateBudgetOfUser($input: BudgetInput!) {
+    createBudgetOfUser(input: $input) {
+      id
+      allocatedAmount
+      name
+    }
+  }
+`;
+export const UPDATE_BUDGET = gql`
+  mutation UpdateBudgetOfUser(
+    $updateBudgetOfUserId: String!
+    $input: BudgetInput!
+  ) {
+    updateBudgetOfUser(id: $updateBudgetOfUserId, input: $input) {
+      id
+      name
+      allocatedAmount
+    }
+  }
+`;
