@@ -9,48 +9,39 @@ export const AuthProvider = ({ children }) => {
   const client = useApolloClient();
 
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState("loading");
+
+  const fetchProfile = async () => {
+    try {
+      const { data } = await client.query({
+        query: GET_PROFILE,
+        fetchPolicy: "network-only",
+      });
+
+      if (data?.getProfile) {
+        setUser(data.getProfile);
+        setStatus("authenticated");
+      } else {
+        setStatus("unauthenticated");
+      }
+    } catch (err) {
+      setUser(null);
+      setStatus("unauthenticated");
+    }
+  };
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data } = await client.query({
-          query: GET_PROFILE,
-          fetchPolicy: "network-only",
-        });
-
-        if (data?.getProfile) {
-          setUser(data.getProfile);
-          setIsAuthenticated(true);
-        } else {
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        setUser(null);
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchProfile();
-  }, [client]);
+  }, []);
 
   const login = async (input) => {
-    await client.mutate({
+    const { data } = await client.mutate({
       mutation: LOGIN,
       variables: { input },
     });
 
-    const { data } = await client.query({
-      query: GET_PROFILE,
-      fetchPolicy: "network-only",
-    });
-
-    setUser(data.getProfile);
-    setIsAuthenticated(true);
+    setUser(data.login.user);
+    setStatus("authenticated");
   };
 
   const logout = async () => {
@@ -59,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     setUser(null);
-    setIsAuthenticated(false);
+    setStatus("unauthenticated");
     await client.clearStore();
   };
 
@@ -67,8 +58,8 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated,
-        loading,
+        isAuthenticated: status === "authenticated",
+        loading: status === "loading",
         login,
         logout,
       }}
