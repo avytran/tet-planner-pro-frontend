@@ -13,11 +13,14 @@ import {
 
 import { useAuth } from "../../hooks/useAuth";
 
-import { TaskItem } from "@/components/Task/TaskItem/TaskItem";
+import { TaskItem } from "@/components/Task/TaskItem";
 import { formatTask } from "@/utils/formatTask.util";
-import { TaskForm } from "@/components/Task/TaskForm";
+import { MutateTaskDialog } from "@/components/Task/MutateTaskDialog";
 import { TaskChart } from "@/components/Task/TaskChart";
 import { TaskProgress } from "@/components/Task/TaskProgress";
+import { TaskFilter } from "@/components/Task/TaskFilter";
+
+import { findItemById } from "@/utils/findItemById";
 
 const MOCK_TASKS = [
   // {
@@ -100,22 +103,9 @@ const SORT_OPTIONS = {
   quantity: "Quantity",
 };
 
-const createEmptyFormState = () => ({
-  title: "",
-  category: "",
-  date: "",
-  description: "",
-  priority: "Low",
-  status: "To Do",
-  timeline: "Before Tet",
-  totalCost: "0",
-});
-
 export default function TaskManagementPage() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState(MOCK_TASKS);
-
-  console.log(tasks);
 
   const [searchValue, setSearchValue] = useState("");
   const [sortBy, setSortBy] = useState("date");
@@ -125,21 +115,10 @@ export default function TaskManagementPage() {
     categories: [],
     priceRange: [0, 5000000],
   });
+
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState(null);
-  const [taskForm, setTaskForm] = useState(createEmptyFormState());
-  const [formError, setFormError] = useState("");
-  const [taskItems, setTaskItems] = useState([]);
-  const [showItemForm, setShowItemForm] = useState(false);
-  const [editingItemId, setEditingItemId] = useState(null);
-  const [itemForm, setItemForm] = useState({
-    name: "",
-    category: "",
-    estimatedPrice: "0",
-    quantity: "1",
-    duedDate: "",
-    status: "Planning",
-  });
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [taskItems, setTaskItems] = useState([]); // query ở dưới
 
   const {
     data: tasksData,
@@ -163,12 +142,19 @@ export default function TaskManagementPage() {
   }, [tasksData]);
 
   const categories = useMemo(() => {
-    return [...new Set(tasks.map((task) => task.category))];
-  }, [tasks]);
+  const map = new Map();
+
+  tasks.forEach(task => {
+    if (task.category) {
+      map.set(task.category.id, task.category);
+    }
+  });
+
+  return Array.from(map.values());
+}, [tasks]);
 
   const visibleTasks = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
-    const [minPrice, maxPrice] = filters.priceRange;
 
     const filtered = tasks.filter((task) => {
       const matchesSearch =
@@ -177,7 +163,7 @@ export default function TaskManagementPage() {
 
       const matchesStatus =
         filters.status.length === 0 ||
-        filters.status.includes(task.budgetStatus);
+        filters.status.includes(task.status);
 
       const matchesTimeline =
         filters.timeline.length === 0 ||
@@ -187,15 +173,11 @@ export default function TaskManagementPage() {
         filters.categories.length === 0 ||
         filters.categories.includes(task.category);
 
-      const matchesPrice =
-        task.totalCost >= minPrice && task.totalCost <= maxPrice;
-
       return (
         matchesSearch &&
         matchesStatus &&
         matchesTimeline &&
-        matchesCategory &&
-        matchesPrice
+        matchesCategory
       );
     });
 
@@ -244,236 +226,22 @@ export default function TaskManagementPage() {
     };
   }, [tasks]);
 
-  const onStatusChange = (taskId, nextStatus) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? {
-            ...task,
-            status: nextStatus,
-            budgetStatus: nextStatus === "Done" ? "Completed" : "Planning",
-          }
-          : task,
-      ),
-    );
-  };
-
   const clearAll = () => {
     setTasks([]);
   };
 
-  const openCreateTaskForm = () => {
-    setEditingTaskId(null);
-    setTaskForm(createEmptyFormState());
-    setFormError("");
+  const handleOpenCreateTaskForm = () => {
     setIsTaskFormOpen(true);
   };
 
-  const openEditTaskForm = (task) => {
-    setEditingTaskId(task.id);
-    setTaskForm({
-      title: task.title,
-      category: task.category,
-      date: task.date,
-      description: task.description || "",
-      priority: task.priority,
-      status: task.status,
-      timeline: task.timeline,
-      totalCost: task.totalCost.toString(),
-    });
-    setFormError("");
+  const handleOpenEditTaskForm = (task) => {
+    setSelectedTaskId(task.id);
     setIsTaskFormOpen(true);
   };
 
-  const closeTaskForm = () => {
+  const handleCloseTaskForm = () => {
     setIsTaskFormOpen(false);
-    setEditingTaskId(null);
-    setTaskForm(createEmptyFormState());
-    setFormError("");
-    setTaskItems([]);
-    setShowItemForm(false);
-    setEditingItemId(null);
-  };
-
-  const openItemForm = () => {
-    setEditingItemId(null);
-    setItemForm({
-      name: "",
-      category: "",
-      estimatedPrice: "0",
-      quantity: "1",
-      duedDate: "",
-      status: "Planning",
-    });
-    setShowItemForm(true);
-  };
-
-  const submitItemForm = (event) => {
-    event.preventDefault();
-
-    if (!itemForm.name.trim() || !itemForm.category.trim()) {
-      return;
-    }
-
-    const nextItem = {
-      id:
-        editingItemId ||
-        `item-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      name: itemForm.name.trim(),
-      category: itemForm.category.trim(),
-      estimatedPrice: Number(itemForm.estimatedPrice) || 0,
-      quantity: Number(itemForm.quantity) || 1,
-      duedDate: itemForm.duedDate,
-      status: itemForm.status,
-    };
-
-    if (editingItemId) {
-      setTaskItems((prev) =>
-        prev.map((item) => (item.id === editingItemId ? nextItem : item)),
-      );
-    } else {
-      setTaskItems((prev) => [...prev, nextItem]);
-    }
-
-    // Save to database immediately if editing an existing task
-    if (editingTaskId) {
-      const saveItem = async () => {
-        try {
-          await createShoppingItemMutation({
-            variables: {
-              input: {
-                taskId: editingTaskId,
-                name: nextItem.name,
-                category: nextItem.category,
-                price: nextItem.estimatedPrice,
-                quantity: nextItem.quantity,
-                duedTime: nextItem.duedDate,
-                status: nextItem.status,
-              },
-            },
-          });
-        } catch (error) {
-          console.error("Error saving shopping item:", error);
-        }
-      };
-      saveItem();
-    }
-
-    // Reset item form để add item mới
-    setItemForm({
-      name: "",
-      category: "",
-      estimatedPrice: "0",
-      quantity: "1",
-      duedDate: "",
-      status: "Planning",
-    });
-    // Giữ form mở để tiếp tục thêm items khác
-  };
-
-  const deleteItem = (itemId) => {
-    setTaskItems((prev) => prev.filter((item) => item.id !== itemId));
-
-    // Delete from database if it's a saved item (has real MongoDB id)
-    if (itemId && !itemId.startsWith("item-") && editingTaskId) {
-      deleteShoppingItemMutation({
-        variables: {
-          id: itemId,
-        },
-      }).then(() => {
-        // Refetch shopping items count after deletion
-        refetchShoppingItemsCount();
-      }).catch((error) => {
-        console.error("Error deleting shopping item:", error);
-      });
-    }
-  };
-
-  const onItemFormFieldChange = (field, value) => {
-    setItemForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const onTaskFormFieldChange = (field, value) => {
-    setTaskForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const submitTaskForm = async (event) => {
-    event.preventDefault();
-
-    if (!taskForm.title.trim() || !taskForm.category.trim() || !taskForm.date) {
-      setFormError("Please fill in title, category and due date.");
-      return;
-    }
-
-    const normalizedCost = Number(taskForm.totalCost) || 0;
-
-    const nextTaskData = {
-      title: taskForm.title.trim(),
-      category: taskForm.category.trim(),
-      date: taskForm.date,
-      description: taskForm.description.trim(),
-      priority: taskForm.priority,
-      status: taskForm.status,
-      timeline: taskForm.timeline,
-      totalCost: normalizedCost,
-      budgetStatus: getBudgetStatusFromTaskStatus(taskForm.status),
-      barColor: getBarColorFromPriority(taskForm.priority),
-    };
-
-    let newTaskId = editingTaskId;
-
-    if (!editingTaskId) {
-      newTaskId = `task-${Date.now()}`;
-      const nextTask = {
-        id: newTaskId,
-        ...nextTaskData,
-      };
-      setTasks((prev) => [nextTask, ...prev]);
-    } else {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === editingTaskId
-            ? {
-              ...task,
-              ...nextTaskData,
-            }
-            : task,
-        ),
-      );
-    }
-
-    // Save shopping items to DB with taskId
-    try {
-      for (const item of taskItems) {
-        // Skip if item already has MongoDB id (already saved)
-        if (item.id && !item.id.startsWith("item-")) {
-          continue;
-        }
-
-        await createShoppingItemMutation({
-          variables: {
-            input: {
-              taskId: newTaskId,
-              name: item.name,
-              category: item.category,
-              price: item.estimatedPrice,
-              quantity: item.quantity,
-              duedTime: item.duedDate,
-              status: item.status,
-            },
-          },
-        });
-      }
-      // Refetch shopping items count after saving
-      refetchShoppingItemsCount();
-    } catch (error) {
-      console.error("Error saving shopping items:", error);
-      setFormError(
-        "Failed to save shopping items. Task was saved but items may not be persisted.",
-      );
-    }
-
-    closeTaskForm();
+    setSelectedTaskId(null);
   };
 
   return (
@@ -487,7 +255,7 @@ export default function TaskManagementPage() {
               label="Add Task"
               color="accent"
               className="!rounded-full !px-5 !py-2 text-sm"
-              onClick={openCreateTaskForm}
+              onClick={handleOpenCreateTaskForm}
             />
             <CommonButton
               label="Clear All"
@@ -513,10 +281,10 @@ export default function TaskManagementPage() {
         {/* Main */}
         <div className="flex flex-col gap-4 lg:flex-row">
           {/* Left - Filter */}
-          <ShoppingFilter
+          <TaskFilter
             filters={filters}
             onFilterChange={setFilters}
-            categories={categories}
+            // categories={categories}
           />
 
           {/* Mid - Task List */}
@@ -557,10 +325,9 @@ export default function TaskManagementPage() {
             <ul className="space-y-3">
               {visibleTasks.map((task) => (
                 <TaskItem 
-                  key={task.id} 
+                  key={"task-" + task.id} 
                   task={task} 
-                  openEditTaskForm={openEditTaskForm}
-                  onStatusChange={onStatusChange}  
+                  handleOpenEditTaskForm={handleOpenEditTaskForm}
                 />
               ))}
 
@@ -583,31 +350,24 @@ export default function TaskManagementPage() {
 
           {/* Right - Chart & Progress */}
           <aside className="w-full lg:w-[300px]">
-            <TaskChart
+            {/* <TaskChart
               chartData={chartData}
             />
 
             <TaskProgress
               summary={summary}
-            />
+            /> */}
           </aside>
         </div>
       </div>
 
       {/* Task Form */}
       {isTaskFormOpen && (
-        <TaskForm
-          editingTaskId={editingItemId}
-          closeTaskForm={closeTaskForm}
-          submitTaskForm={submitTaskForm}
-          taskForm={taskForm}
+        <MutateTaskDialog
+          selectedTask={findItemById(tasks, selectedTaskId)}
+          handleCloseTaskForm={handleCloseTaskForm}
           categories={categories}
-          formError={formError}
-          openItemForm={openItemForm}
           taskItems={taskItems}
-          showItemForm={showItemForm}
-          submitItemForm={submitItemForm}
-          deleteItem={deleteItem}
         />
       )}
     </section>

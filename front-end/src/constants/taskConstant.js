@@ -1,6 +1,14 @@
-export const TASK_STATUS_OPTIONS = ["To Do", "In Progress", "Done"];
+export const TASK_STATUS_OPTIONS = [
+  { label: "To Do", value: "Todo" },
+  { label: "In Progress", value: "In_Progress" },
+  { label: "Done", value: "Done" },
+];
 export const PRIORITY_OPTIONS = ["Low", "Medium", "High"];
-export const TIMELINE_OPTIONS = ["Before Tet", "30 Tet", "Mung 1-3"];
+export const TIMELINE_OPTIONS = [
+  { label: "Pre Tet", value: "Pre_Tet" },
+  { label: "During Tet", value: "During_Tet" },
+  { label: "After Tet", value: "After_Tet" }
+];
 
 export const STATUS_CLASS = {
   "To Do": "text-primary-strong",
@@ -27,6 +35,11 @@ export const emptyTaskForm = () => ({
   description: "",
   priority: "Low",
   status: "To Do",
-  timeline: "Before Tet",
+  timeline: "Pre Tet",
   totalCost: "0",
 });
+
+export const FILTER_OPTS = {
+  status: TASK_STATUS_OPTIONS,
+  timeline: TIMELINE_OPTIONS,
+};
