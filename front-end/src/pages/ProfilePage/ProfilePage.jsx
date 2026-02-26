@@ -6,6 +6,7 @@ import { useTotalBudget } from "@/hooks/useTotalBudget";
 import { parseProfileFromGetProfile } from "@/schemas/profile.schema";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CommonButton from "@/components/Button/CommonButton";
 
 function formatNumberVi(value) {
   const n = typeof value === "number" ? value : Number(value);
@@ -35,31 +36,26 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <h1 className="profile-title">My Profile</h1>
+      <h1 className="text-primary font-semibold text-5xl">My Profile</h1>
 
-      <div className="profile-card">
-        <div className="profile-avatar">
+      <div className="profile-card px-6 py-15 mt-5">
+        <div className="profile-avatar mb-4">
           <img src={avatarImg} alt="Avatar" />
         </div>
 
-        <div className="profile-name">{profile?.fullName ?? "—"}</div>
-        <div className="profile-email">{profile?.email ?? "—"}</div>
+        <div className="text-body text-black font-bold text-xl">{profile?.fullName ?? "—"}</div>
+        <div className="text-black">{profile?.email ?? "—"}</div>
 
-        <div className="profile-budget">
-          <span className="profile-budget-label">Total Budget:</span>{" "}
-          <span className="profile-budget-value">
-            {budgetLoading ? "…" : formatNumberVi(totalBudget)}
-          </span>
-        </div>
+        <div className="text-2xl text-primary font-semibold mt-1 ">Total Budget: 
+          <span className="text-black"> {budgetLoading ? "…" : formatNumberVi(totalBudget)}</span></div>
       </div>
 
-      <button
-        className="profile-logout-btn"
+      <CommonButton
         onClick={handleLogout}
         disabled={isLoggingOut}
-      >
-        {isLoggingOut ? "Logging out..." : "Log out"}
-      </button>
+        label={isLoggingOut ? "Logging out..." : "Log out"}
+        color="danger"
+      />
     </div>
   );
 }
