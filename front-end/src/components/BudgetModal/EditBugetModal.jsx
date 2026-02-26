@@ -7,70 +7,73 @@ import {
 } from "@/graphql/mutations/budget.mutation";
 import { useAuth } from "@/hooks/useAuth";
 import { GET_BUDGETS } from "@/graphql/queries/budget.query";
+import {
+  createBudgetThunk,
+  updateBudgetThunk,
+} from "@/features/budget/budgetThunks";
+import { useDispatch, useSelector } from "react-redux";
+import { validateBudget } from "@/utils/budgetValidation";
+import {
+  selectTotalAllocation,
+  selectTotalBudget,
+} from "@/features/budget/budgetSelectors";
 
 export default function EditBudgetModal({
   onClose,
-  totalAllocation,
-  currentBudget,
-  budgetName,
-  totalBudget,
+  currentBudget = 0,
+  spending = 0,
+  budgetName = "",
   type,
   id,
 }) {
   const { user } = useAuth();
-
+  const totalBudget = useSelector(selectTotalBudget);
+  const totalAllocation = useSelector(selectTotalAllocation);
   const [amount, setAmount] = useState(currentBudget || 0);
   const [name, setName] = useState(budgetName || "");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [createBudget] = useMutation(CREATE_BUDGET, {});
-  const [updateBudget] = useMutation(UPDATE_BUDGET);
-
   const onSubmitUpdateBudget = async () => {
-    // const { isValid, message } = validateBudget(amount, totalAllocation);
+    const { isValid, message } = validateBudget(
+      amount,
+      totalBudget - totalAllocation,
+      spending,
+    );
 
-    // setErrorMessage(message);
+    setErrorMessage(message);
 
-    // if (!isValid) return;
+    if (!isValid) return;
     try {
       if (type === "Add") {
-        await createBudget({
-          variables: {
+        await dispatch(
+          createBudgetThunk({
+            userId: user.id,
             input: {
               allocatedAmount: parseFloat(amount),
               name: name,
-              userId: user.id,
             },
-          },
-          refetchQueries: [
-            {
-              query: GET_BUDGETS,
-              variables: {
-                userId: user.id,
-              },
-            },
-          ],
-        });
+          }),
+        ).unwrap();
       } else {
-        await updateBudget({
-          variables: {
-            updateBudgetOfUserId: id,
+        console.log("this update");
+        await dispatch(
+          updateBudgetThunk({
+            id,
             input: {
               allocatedAmount: parseFloat(amount),
               name: name,
               userId: user.id,
             },
-          },
-        });
+          }),
+        ).unwrap();
       }
       onClose();
     } catch (err) {
-      const message = err.networkError
-        ? "Server error. Please try again."
-        : "Update failed. Please try again.";
-      alert(message);
+      console.log(err);
+      alert("Something went wrong while saving your budget.");
     }
   };
+  const dispatch = useDispatch();
 
   return (
     <div className="fixed inset-0  bg-black/50 flex justify-center items-center z-50">
@@ -95,7 +98,7 @@ export default function EditBudgetModal({
           className="w-full p-2 border border-gray-300 rounded-xl mb-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary mt-2"
         />
         <p className="h-full flex justify-end mb-2">VND</p>
-        {errorMessage && <div className="text-danger">{errorMessage}</div>}
+        {errorMessage && <div className="text-danger mb-2">{errorMessage}</div>}
         <div className="flex justify-end gap-2">
           <CommonButton label={"Cancel"} color="secondary" onClick={onClose}>
             Cancel
