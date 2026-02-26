@@ -65,8 +65,8 @@ export const ResetPasswordForm = () => {
     } catch (err) {
       let message = "Failed to reset password. Please try again.";
 
-      if (err.graphqlErrors?.length) {
-        message = err.graphqlErrors[0].message;
+      if (err.errors?.length) {
+        message = err.errors[0].message;
       } else if (err.networkError) {
         message = "Server error. Please try again.";
       }
