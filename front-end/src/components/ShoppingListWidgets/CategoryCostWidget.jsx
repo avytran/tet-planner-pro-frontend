@@ -7,11 +7,17 @@ export default function CategoryCostWidget({
     total,
     color = "var(--color-primary)",
     bg = "var(--color-surface)",
-    barColor = "var(--color-success-strong)",
+    barColor = "var(--color-success)",
     barBg = "#CBD5E1",
     currency = "VND"
 }) {
     const [expanded, setExpanded] = useState(true);
+    let warningMsg = null;
+    if (percent >= 100) {
+        warningMsg = <div className="text-sm text-red-600 mb-3 font-semibold">Alert: Over category budget!</div>;
+    } else if (percent >= 80) {
+        warningMsg = <div className="text-sm text-orange-500 mb-3 font-semibold">Warning: Near category budget limit!</div>;
+    }
     return (
         <div className="rounded-2xl shadow-md border border-gray-200 mb-3 font-sans" style={{ background: bg }}>
             <button
@@ -42,6 +48,7 @@ export default function CategoryCostWidget({
                             style={{ width: `${percent}%`, background: barColor }}
                         />
                     </div>
+                    {warningMsg}
                     <div className="text-2xl font-semibold flex items-end" style={{ color, fontFamily: 'var(--font-sans)' }}>
                         {spent.toLocaleString()}
                         <span className="text-2xl font-semibold ml-1">{currency}</span>

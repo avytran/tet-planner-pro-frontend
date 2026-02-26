@@ -4,79 +4,51 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import CommonButton from "../Button/CommonButton";
 import { ShoppingTable } from "../ShoppingTable";
 import ShoppingItemForm from "./ShoppingItemForm";
+import { getTetTimelineAuto } from "../../utils/getTetTimelineAuto";
 import ShoppingItemMessages from "./ShoppingItemMessages";
 
 const statusOptions = ["Planning", "Completed"];
-const timelineOptions = ["Pre Tet", "During Tet", "After Tet"];
 
 export default function ShoppingItemDialog({
     open = true,
     onClose,
     mode = "add", // 'add' | 'edit'
     initialData = null,
+    onSave,
+    recentlyAddedItems = [],
+    totalShoppingCost = 0,
+    remainingBudget = 0,
+    maxBudget = 0,
+    taskList = [],
+    budgetCategories = [],
 }) {
-    // Simulate fetch from DB (replace with real API call)
-    const [budgetCategories, setBudgetCategories] = useState([]);
-    // Simulate task list with category mapping (replace with real API call)
-    const [taskList, setTaskList] = useState([
-        { title: "Mâm ngũ quả", category: "Food" },
-        { title: "Trang trí nhà cửa", category: "Shopping" },
-        { title: "Chuẩn bị bánh chưng", category: "Food" },
-        { title: "Mua hoa", category: "Gift" },
-        { title: "Lì xì", category: "Gift" },
-    ]);
+    const [sessionAddedItems, setSessionAddedItems] = useState([]);
 
-    // Temporary mock data for recently added items (replace with real data or state)
-    const mockRecentlyAdded = [
-        {
-            id: 1,
-            name: "Bánh chưng",
-            date: "2026-02-01",
-            price: 100000,
-            category: "Food",
-            qty: 2,
-            status: "Planning",
-        },
-        {
-            id: 2,
-            name: "Hoa mai",
-            date: "2026-02-02",
-            price: 200000,
-            category: "Gift",
-            qty: 1,
-            status: "Completed",
-        },
-    ];
-
-    // Temporary mock values for ShoppingItemMessages props (replace with real logic/state)
-    const totalShoppingCost = 300000;
-    const remainingBudget = 500000;
-    const maxBudget = 800000;
-    const newItemsCount = mockRecentlyAdded.length;
-    const addedAmount = mockRecentlyAdded.reduce((sum, item) => sum + item.price * item.qty, 0);
-
-    useEffect(() => {
-        // Simulate async fetch
-        setTimeout(() => {
-        setBudgetCategories(["Shopping", "Drink", "Food", "Gift", "xxxx"]);
-        }, 200);
-    }, []);
+    const newItemsCount = sessionAddedItems.length;
+    const addedAmount = sessionAddedItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
 
     const initialFormState = {
         task: initialData?.task || "",
+        taskId: initialData?.taskId || "",
         itemName: initialData?.itemName || "",
         budgetCategory: initialData?.budgetCategory || "",
+        budgetCategoryName: initialData?.budgetCategoryName || "",
         estimatedPrice: initialData?.estimatedPrice || "",
         quantity: initialData?.quantity || 1,
         duedDate: initialData?.duedDate || "",
-        timeline: initialData?.timeline || "",
         status: initialData?.status || "",
+        id: initialData?.id || undefined,
+        timeline: initialData?.duedDate ? getTetTimelineAuto(initialData.duedDate) : "",
     };
     const [formData, setFormData] = useState(initialFormState);
 
     useEffect(() => {
         if (open) {
-        setFormData(initialFormState);
+            setFormData({
+                ...initialFormState,
+                timeline: initialData?.duedDate ? getTetTimelineAuto(initialData.duedDate) : "",
+            });
+            setSessionAddedItems([]);
         }
     }, [open]);
 
@@ -86,18 +58,11 @@ export default function ShoppingItemDialog({
     const taskDropdownRef = useRef(null);
 
     useEffect(() => {
-        const found = taskList.find(t => t.title === formData.task);
-        if (found && found.category && formData.budgetCategory !== found.category) {
-        setFormData(f => ({ ...f, budgetCategory: found.category }));
-        }
-    }, [formData.task]);
-
-    useEffect(() => {
         if (!showTaskDropdown) return;
         function handleClickOutside(e) {
-        if (taskDropdownRef.current && !taskDropdownRef.current.contains(e.target)) {
-            setShowTaskDropdown(false);
-        }
+            if (taskDropdownRef.current && !taskDropdownRef.current.contains(e.target)) {
+                setShowTaskDropdown(false);
+            }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -107,94 +72,109 @@ export default function ShoppingItemDialog({
 
     return (
         <div
-        className="fixed inset-0 flex items-center justify-center bg-black/50"
-        style={{ zIndex: 1100 }}
-        onClick={onClose}
-        >
-        <div
-            className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 relative"
-            onClick={e => e.stopPropagation()}
-        >
-            {/* Close button */}
-            <button
+            className="fixed inset-0 flex items-center justify-center bg-black/50"
+            style={{ zIndex: 1100 }}
             onClick={onClose}
-            className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition z-10 cursor-pointer"
+        >
+            <div
+                className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 relative"
+                onClick={e => e.stopPropagation()}
             >
-            <XMarkIcon className="w-6 h-6 text-gray-500" />
-            </button>
+                {/* Close button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition z-10 cursor-pointer"
+                >
+                    <XMarkIcon className="w-6 h-6 text-gray-500" />
+                </button>
 
-            <div className="p-8">
-            {/* Header */}
-            <div className="mb-6">
-                <h2 className="text-2xl font-medium text-black">
-                {mode === "add" ? "Shopping item" : "Edit shopping item"}
-                </h2>
-                <p className="text-black/50 text-sm">
-                Tết is more fun when your budget stays happy too
-                </p>
-            </div>
+                <div className="p-8">
+                    {/* Header */}
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-medium text-black">
+                            {mode === "add" ? "Shopping Item" : "Edit Shopping Item"}
+                        </h2>
+                        <p className="text-black/50 text-sm">
+                            Tet is more fun when your budget stays happy too
+                        </p>
+                    </div>
 
-            {/* Form section */}
-            <ShoppingItemForm
-                formData={formData}
-                setFormData={setFormData}
-                showCategoryDropdown={showCategoryDropdown}
-                setShowCategoryDropdown={setShowCategoryDropdown}
-                showStatusDropdown={showStatusDropdown}
-                setShowStatusDropdown={setShowStatusDropdown}
-                showTaskDropdown={showTaskDropdown}
-                setShowTaskDropdown={setShowTaskDropdown}
-                taskDropdownRef={taskDropdownRef}
-                taskOptions={taskList.map(t => t.title)}
-                budgetCategories={budgetCategories}
-                statusOptions={statusOptions}
-                timelineOptions={timelineOptions}
-            />
-            {/* Save button */}
-            <div className="pt-2 flex justify-center">
-                <CommonButton
-                label="Save change"
-                color="success"
-                onClick={() => {}}
-                />
-            </div>
+                    {/* Form section */}
+                    <ShoppingItemForm
+                        formData={formData}
+                        setFormData={setFormData}
+                        showCategoryDropdown={showCategoryDropdown}
+                        setShowCategoryDropdown={setShowCategoryDropdown}
+                        showStatusDropdown={showStatusDropdown}
+                        setShowStatusDropdown={setShowStatusDropdown}
+                        showTaskDropdown={showTaskDropdown}
+                        setShowTaskDropdown={setShowTaskDropdown}
+                        taskDropdownRef={taskDropdownRef}
+                        taskOptions={taskList}
+                        budgetCategories={budgetCategories}
+                        statusOptions={statusOptions}
+                    />
+                    
+                    {/* Save button */}
+                    <div className="pt-4 flex justify-center">
+                        <CommonButton
+                            label="Save change"
+                            color="success"
+                            onClick={async () => {
+                                if (
+                                    !formData.taskId || !formData.itemName || !formData.budgetCategory || !formData.quantity
+                                    || !formData.estimatedPrice || !formData.duedDate || !formData.status
+                                ) {
+                                    alert("Please fill in all required fields!");
+                                    return;
+                                }
+                                if (onSave) {
+                                    const isSuccess = await onSave(formData);
+                                    console.log("Save status:", isSuccess)
+                                        
+                                    if (isSuccess && mode === "add") {
+                                        const newItem = {
+                                            id: Date.now().toString(),
+                                            name: formData.itemName,
+                                            dued_time: formData.duedDate,
+                                            price: Number(formData.estimatedPrice),
+                                            category: formData.budgetCategoryName,
+                                            quantity: Number(formData.quantity),
+                                            status: formData.status,
+                                        };
+                                        setSessionAddedItems(prev => [newItem, ...prev]);
+                                        setFormData(initialFormState);
+                                    }
+                                }
+                            }}
+                        />
+                    </div>
 
-            {/* Recently added section - Only show in add mode */}
-            {mode === "add" && (
-                <div className="mt-8 flex gap-6 items-center">
-                {/* Left: Table */}
-                <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-primary mb-2">
-                    Recently added shopping items
-                    </h3>
-                    <p className="text-lg text-primary text-sm mb-4">
-                    Task: {formData.task}
-                    </p>
+                    {/* Recently added section - Only show in add mode */}
+                    {mode === "add" && sessionAddedItems.length > 0 && (
+                        <div className="mt-8 flex gap-6 items-start">
+                            {/* Left: Table */}
+                            <div className="flex-1">
+                                <h3 className="text-xl font-semibold text-primary mb-2">
+                                    Recently added shopping items
+                                </h3>
 
-                    <ShoppingTable items={mockRecentlyAdded.map(item => ({
-                    id: item.id,
-                    name: item.name,
-                    dued_time: item.date,
-                    price: item.price,
-                    category: item.category,
-                    quantity: item.qty,
-                    status: item.status,
-                    }))} />
+                                <ShoppingTable items={sessionAddedItems} />
+                            </div>
+
+                            {/* Right: Messages */}
+                            <ShoppingItemMessages
+                                formData={sessionAddedItems[0]}
+                                totalShoppingCost={totalShoppingCost}
+                                remainingBudget={remainingBudget}
+                                maxBudget={maxBudget}
+                                newItemsCount={newItemsCount}
+                                addedAmount={addedAmount}
+                            />
+                        </div>
+                    )}
                 </div>
-
-                {/* Right: Messages */}
-                <ShoppingItemMessages
-                    formData={formData}
-                    totalShoppingCost={totalShoppingCost}
-                    remainingBudget={remainingBudget}
-                    maxBudget={maxBudget}
-                    newItemsCount={newItemsCount}
-                    addedAmount={addedAmount}
-                />
-                </div>
-            )}
             </div>
-        </div>
         </div>
     );
 }

@@ -19,7 +19,11 @@ export default function RowActionDialog({ open, onClose, onEdit, onDelete }) {
                 </button>
                 <button
                     className="group w-full flex flex-row items-center gap-2 py-3 px-4 rounded-b-2xl text-[var(--color-danger)] bg-transparent text-base hover:cursor-pointer hover:bg-[var(--color-text)] hover:text-white transition"
-                    onClick={onDelete}
+                    onClick={() => {
+                        if (window.confirm("Are you sure you want to delete this item?")) {
+                            onDelete();
+                        }
+                    }}
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
