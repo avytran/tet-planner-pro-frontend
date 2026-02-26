@@ -21,6 +21,8 @@ import { TaskProgress } from "@/components/Task/TaskProgress";
 import { TaskFilter } from "@/components/Task/TaskFilter";
 
 import { findItemById } from "@/utils/findItemById";
+import { CHART_COLORS } from "@/constants/taskConstant";
+import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
 
 const MOCK_TASKS = [
   // {
@@ -118,7 +120,6 @@ export default function TaskManagementPage() {
 
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
-  const [taskItems, setTaskItems] = useState([]); // query ở dưới
 
   const {
     data: tasksData,
@@ -142,16 +143,16 @@ export default function TaskManagementPage() {
   }, [tasksData]);
 
   const categories = useMemo(() => {
-  const map = new Map();
+    const map = new Map();
 
-  tasks.forEach(task => {
-    if (task.category) {
-      map.set(task.category.id, task.category);
-    }
-  });
+    tasks.forEach(task => {
+      if (task.category) {
+        map.set(task.category.id, task.category);
+      }
+    });
 
-  return Array.from(map.values());
-}, [tasks]);
+    return Array.from(map.values());
+  }, [tasks]);
 
   const visibleTasks = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
@@ -189,24 +190,18 @@ export default function TaskManagementPage() {
   }, [filters, searchValue, sortBy, tasks]);
 
   const chartData = useMemo(() => {
-    const totals = categories.map((category) => {
+    const totals = categories.map((category, index) => {
       const count = tasks.filter((task) => task.category === category).length;
-      return { category, count };
+
+      return {
+        id: category.id,
+        value: count,
+        name: category.name,
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      };
     });
 
-    const colorMap = {
-      Food: "var(--color-danger)",
-      Decoration: "var(--color-primary)",
-      Gift: "var(--color-accent)",
-      Cloth: "var(--color-success)",
-    };
-
-    return totals.map((item, index) => ({
-      id: index,
-      value: item.count,
-      label: item.category,
-      color: colorMap[item.category] || "var(--color-primary)",
-    }));
+    return totals;
   }, [categories, tasks]);
 
   const summary = useMemo(() => {
@@ -216,7 +211,7 @@ export default function TaskManagementPage() {
     ).length;
     const done = tasks.filter((task) => task.status === "Done").length;
     const before = tasks.filter(
-      (task) => task.timeline === "Pre Tet",
+      (task) => task.timeline === getTetTimelineAuto(new Date()),
     ).length;
 
     return {
@@ -284,7 +279,7 @@ export default function TaskManagementPage() {
           <TaskFilter
             filters={filters}
             onFilterChange={setFilters}
-            // categories={categories}
+            categories={categories}
           />
 
           {/* Mid - Task List */}
@@ -324,9 +319,9 @@ export default function TaskManagementPage() {
             {/* List */}
             <ul className="space-y-3">
               {visibleTasks.map((task) => (
-                <TaskItem 
-                  key={"task-" + task.id} 
-                  task={task} 
+                <TaskItem
+                  key={"task-" + task.id}
+                  task={task}
                   handleOpenEditTaskForm={handleOpenEditTaskForm}
                 />
               ))}
@@ -350,13 +345,13 @@ export default function TaskManagementPage() {
 
           {/* Right - Chart & Progress */}
           <aside className="w-full lg:w-[300px]">
-            {/* <TaskChart
+            <TaskChart
               chartData={chartData}
             />
 
             <TaskProgress
               summary={summary}
-            /> */}
+            />
           </aside>
         </div>
       </div>
@@ -367,7 +362,6 @@ export default function TaskManagementPage() {
           selectedTask={findItemById(tasks, selectedTaskId)}
           handleCloseTaskForm={handleCloseTaskForm}
           categories={categories}
-          taskItems={taskItems}
         />
       )}
     </section>

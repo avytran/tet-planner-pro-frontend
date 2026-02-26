@@ -28,7 +28,7 @@ export const TaskChart = ({ chartData }) => {
                       className="h-2.5 w-2.5 rounded-full"
                       style={{ backgroundColor: item.color }}
                     ></span>
-                    <span>{item.label}</span>
+                    <span>{item.name}</span>
                   </div>
                 ))}
               </div>

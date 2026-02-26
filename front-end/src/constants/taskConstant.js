@@ -43,3 +43,12 @@ export const FILTER_OPTS = {
   status: TASK_STATUS_OPTIONS,
   timeline: TIMELINE_OPTIONS,
 };
+
+export const CHART_COLORS = [
+  "var(--color-primary)",
+  "var(--color-accent)",
+  "var(--color-success)",
+  "var(--color-danger)",
+  "var(--color-warning)",
+  "var(--color-info)",
+]

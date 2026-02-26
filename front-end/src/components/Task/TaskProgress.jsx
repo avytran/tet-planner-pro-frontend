@@ -2,6 +2,9 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
+import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
+import { formatTimeline } from "@/utils/formatTask.util";
+
 export const TaskProgress = ({ summary }) => {
     return (
         <div className="rounded-xl border border-primary/10 bg-white p-4">
@@ -24,7 +27,7 @@ export const TaskProgress = ({ summary }) => {
             <OverviewRow
                 title="Current Timeline"
                 value={summary.before}
-                helperText="Before Tet"
+                helperText={formatTimeline(getTetTimelineAuto(new Date()))}
                 colorClass="bg-primary"
                 isLast
             />

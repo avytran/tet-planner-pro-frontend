@@ -56,7 +56,7 @@ export const TaskFilter = ({
             </div>
             
             {/* CATEGORY */}
-            {/* <div className="mb-4">
+            <div className="mb-4">
                 <h4 className="font-semibold text-primary-strong text-base mb-2 font-sans text-left">Category</h4>
                 <div className="flex flex-col gap-1 max-h-[140px] overflow-y-auto">
                     {categories.length > 0 ? (
@@ -64,15 +64,15 @@ export const TaskFilter = ({
                             <FilterCheckbox 
                                 key={cat.id} 
                                 label={cat.name} 
-                                // checked={filters.categories?.includes(cat)} 
-                                // onChange={() => handleCheckboxChange('categories', cat)}
+                                checked={filters.categories?.includes(cat)} 
+                                onChange={() => handleCheckboxChange('categories', cat)}
                             />
                         ))
                     ) : (
                         <span className="text-xs text-primary-strong/65 italic font-sans">No categories available</span>
                     )}
                 </div>
-            </div> */}
+            </div>
         </div>
     );
 };
