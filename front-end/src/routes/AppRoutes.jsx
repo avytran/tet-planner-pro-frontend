@@ -8,6 +8,7 @@ import TaskManagementPage from "../pages/TaskManagementPage";
 import BudgetManagementPage from "../pages/BudgetManagementPage";
 import ShoppingListPage from "../pages/ShoppingListPage";
 import AboutPage from "../pages/AboutPage";
+import ProfilePage from "../pages/ProfilePage";
 import { LoginPage } from "../pages/LoginPage/LoginPage";
 import { SignupPage } from "../pages/SignupPage/SignupPage";
 import { ForgotPasswordPage } from "../pages/ForgotPasswordPage/ForgotPasswordPage";
@@ -23,6 +24,7 @@ export default function AppRoutes() {
           <Route path="task-management" element={<TaskManagementPage />} />
           <Route path="budget-management" element={<BudgetManagementPage />} />
           <Route path="shopping-list" element={<ShoppingListPage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="about" element={<AboutPage />} />
         </Route>
       </Route>

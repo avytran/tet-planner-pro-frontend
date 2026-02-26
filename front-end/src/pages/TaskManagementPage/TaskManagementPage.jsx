@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   MagnifyingGlassIcon,
+  PencilSquareIcon,
   PlusIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
 import {
@@ -23,6 +25,26 @@ import { CHART_COLORS } from "@/constants/taskConstant";
 import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
 
 import { TASKS_PER_PAGE } from "@/constants/taskConstant";
+
+const getBudgetStatusFromTaskStatus = (taskStatus) =>
+  taskStatus === "Done" ? "Completed" : "Planning";
+
+const getBarColorFromPriority = (priority) => {
+  if (priority === "High") return "var(--color-danger)";
+  if (priority === "Medium") return "var(--color-accent)";
+  return "var(--color-success)";
+};
+
+const createEmptyFormState = () => ({
+  title: "",
+  category: "",
+  date: "",
+  description: "",
+  priority: "Low",
+  status: "To Do",
+  timeline: "Before Tet",
+  totalCost: "0",
+});
 
 export default function TaskManagementPage() {
   const { user } = useAuth();
