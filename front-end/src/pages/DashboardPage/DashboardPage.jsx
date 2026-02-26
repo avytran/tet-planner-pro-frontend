@@ -5,139 +5,44 @@ import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
 import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
 import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { useContext } from 'react';
-import { AuthContext } from '@/context/AuthContext';
 import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
-import { useTasks, useItems, useTaskCategory, useTotalBudget } from '../../hooks/useDashboardData';
-import { mapData, transformData, calPercentage, mapDataDued, reminderNoti, progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
+import { useDashboardData } from '../../hooks/useDashboardData';
+import { progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
 
-/**
- * getTasks
- * getTaskCategory
- * getItems
- * getTotalBudget
- */
 export default function DashboardPage() {
+  const {
+    loading,
+    error,
+    tasksTotal,
+    tasksDone,
+    tasksInnerData,
+    tasksOuterData,
+    itemsTotal,
+    itemsDone,
+    itemsInnerData,
+    itemsOuterData,
+    tasksPercentage,
+    itemsPercentage,
+    budgetSpentPercentage,
+    categorySeries,
+    timelineSeries,
+    datePoints,
+    reminderNotification
+  } = useDashboardData();
 
-  const { user } = useContext(AuthContext);
-  const { loading: tasksLoading, error: tasksError, data: tasksData } = useTasks(user.id);
-  const { loading: itemsLoading, error: itemsError, data: itemsData } = useItems(user.id);
-  const { loading: categoryLoading, error: categoryError, data: categoryData } = useTaskCategory(user.id);
-  const { loading: budgetLoading, error: budgetError, data: budgetData } = useTotalBudget(user.id);
-
-  if (tasksLoading || itemsLoading || categoryLoading || budgetLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center p-20">
         Loading data...
       </div>);
-  } else if (tasksError || itemsError || categoryError || budgetError) {
+  }
+
+  if (error) {
     return (
       <div className="flex justify-center items-center p-20">
         Fail to load data
-      </div>)
+      </div>);
   }
-
-  // console.log(tasksData.getTasks)
-  // console.log(itemsData.getItems.items)
-
-  const tasksMap = mapData(tasksData.getTasks)
-  const tasksMapTransformed = transformData(tasksMap.result)
-  const tasksTotal = tasksMap.total
-  const tasksDone = tasksMap.done
-  const tasksInnerData = tasksMapTransformed.innerData
-  const tasksOuterData = tasksMapTransformed.outerData
-
-  const itemsMap = mapData(itemsData.getItems.items)
-  const itemsMapTransformed = transformData(itemsMap.result)
-  const itemsTotal = itemsMap.total
-  const itemsDone = itemsMap.done
-  const itemsInnerData = itemsMapTransformed.innerData
-  const itemsOuterData = itemsMapTransformed.outerData
-
-  const itemsCompleted = itemsData.getItems.items.filter(item => item.status === "Completed")
-  const itemsSpent = itemsCompleted.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-  const categoryIdMap = Object.fromEntries(
-    categoryData.getTaskCategory.map(c => [c.id, c.name])
-  );
-
-  const MAX_CATEGORY = 3;
-
-  const finalMap = Object.entries(
-    tasksData.getTasks.reduce((acc, task) => {
-      acc[task.categoryId] = (acc[task.categoryId] || 0) + 1;
-      return acc;
-    }, {})
-  )
-    .sort((a, b) => b[1] - a[1])
-    .reduce((acc, [id, count], index) => {
-      if (index < MAX_CATEGORY) {
-        acc[id] = count;
-      } else {
-        acc.others = (acc.others || 0) + count;
-      }
-      return acc;
-    }, {});
-
-  const colors = [
-    'var(--color-primary)',
-    'var(--color-accent)',
-    'var(--color-success)',
-    'var(--color-highlight)'
-  ];
-
-  const categorySeries = Object.entries(finalMap).map(([id, value], index) => ({
-    id,
-    value: calPercentage(value, tasksTotal),
-    label: id === "others" ? "Others" : categoryIdMap[id],
-    color: colors[index % colors.length]
-  }));
-
-  const tasksPercentage = calPercentage(tasksDone, tasksTotal);
-  const itemsPercentage = calPercentage(itemsDone, itemsTotal);
-  const budgetSpentPercentage = calPercentage(itemsSpent, budgetData.getTotalBudget.totalBudget);
-
-  const budgetIdLabel = Object.fromEntries(
-    [...new Map(itemsCompleted.map(item => [item.budget.id, item.budget.name]))]
-  );
-
-  const budgetIdArr = Object.keys(budgetIdLabel);
-  let dateMapItems = new Map();
-
-  itemsCompleted.forEach(item => {
-    const day = new Date(item.updatedAt).toISOString().split('T')[0];
-    const value = item.price * item.quantity;
-    const budgetId = item.budget.id;
-
-    if (!dateMapItems.has(day)) {
-      const dayData = Object.fromEntries(
-        budgetIdArr.map(id => [id, 0])
-      );
-      dateMapItems.set(day, dayData);
-    }
-
-    const existing = dateMapItems.get(day);
-    existing[budgetId] += value;
-  });
-
-  const sortedMap = new Map();
-  for (let [date, data] of dateMapItems) {
-    const sortedData = {};
-    budgetIdArr.forEach(id => {
-      sortedData[id] = data[id] || 0;
-    });
-    sortedMap.set(date, sortedData);
-  }
-
-  // Get sorted date points
-  const datePoints = [...dateMapItems.keys()].sort();
-
-  const timelineSeries = budgetIdArr.map((budgetId, index) => ({
-    id: index,
-    curve: "linear",
-    data: datePoints.map(date => dateMapItems.get(date)?.[budgetId] || 0),
-    label: budgetIdLabel[budgetId]
-  }));
 
   const date = new Date();
   const dateArray = date.toDateString().split(" ");
@@ -480,7 +385,7 @@ export default function DashboardPage() {
             className={"px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col"}
           >
             <p className={"text-base font-semibold text-white"}>Reminder</p>
-            <p className={"text-base font-light text-left text-white"}>{reminderNoti(mapDataDued(tasksData.getTasks),mapDataDued(itemsData.getItems.items))}</p>
+            <p className={"text-base font-light text-left text-white"}>{reminderNotification}</p>
           </div>
         </div>
       </div>
