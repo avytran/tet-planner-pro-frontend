@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import { useMutation } from "@apollo/client/react";
 import { UPDATE_TOTAL_BUDGET } from "@/graphql/mutations/budget.mutation";
-import { validateBudget } from "@/utils/budgetValidation";
+import { validateBudget, validateTotalBudget } from "@/utils/budgetValidation";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function EditTotalBudgetModal({
@@ -16,7 +16,7 @@ export default function EditTotalBudgetModal({
   const [errorMessage, setErrorMessage] = useState("");
   const [updateTotalBudget] = useMutation(UPDATE_TOTAL_BUDGET);
   const onSubmitTotalBudget = async () => {
-    const { isValid, message } = validateBudget(amount, totalAllocation);
+    const { isValid, message } = validateTotalBudget(amount, totalAllocation);
 
     setErrorMessage(message);
 
