@@ -17,6 +17,7 @@ import {
 } from "@/graphql/mutations/budget.mutation";
 import { useAuth } from "@/hooks/useAuth";
 import EditBudgetModal from "../BudgetModal/EditBugetModal";
+import { GET_BUDGETS } from "@/graphql/queries/budget.query";
 
 export default function BudgetCategoryCard({
   id,
@@ -46,6 +47,14 @@ export default function BudgetCategoryCard({
           deleteBudgetOfUserId: id,
           userId: user.id,
         },
+        refetchQueries: [
+          {
+            query: GET_BUDGETS,
+            variables: {
+              userId: user.id,
+            },
+          },
+        ],
       });
     } catch (err) {
       const message = err.networkError

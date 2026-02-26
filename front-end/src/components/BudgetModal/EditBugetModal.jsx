@@ -1,13 +1,12 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import { useMutation } from "@apollo/client/react";
 import {
   CREATE_BUDGET,
   UPDATE_BUDGET,
-  UPDATE_TOTAL_BUDGET,
 } from "@/graphql/mutations/budget.mutation";
-import { validateBudget } from "@/utils/budgetValidation";
 import { useAuth } from "@/hooks/useAuth";
+import { GET_BUDGETS } from "@/graphql/queries/budget.query";
 
 export default function EditBudgetModal({
   onClose,
@@ -23,8 +22,10 @@ export default function EditBudgetModal({
   const [amount, setAmount] = useState(currentBudget || 0);
   const [name, setName] = useState(budgetName || "");
   const [errorMessage, setErrorMessage] = useState("");
-  const [createBudget] = useMutation(CREATE_BUDGET);
+
+  const [createBudget] = useMutation(CREATE_BUDGET, {});
   const [updateBudget] = useMutation(UPDATE_BUDGET);
+
   const onSubmitUpdateBudget = async () => {
     // const { isValid, message } = validateBudget(amount, totalAllocation);
 
@@ -41,6 +42,14 @@ export default function EditBudgetModal({
               userId: user.id,
             },
           },
+          refetchQueries: [
+            {
+              query: GET_BUDGETS,
+              variables: {
+                userId: user.id,
+              },
+            },
+          ],
         });
       } else {
         await updateBudget({

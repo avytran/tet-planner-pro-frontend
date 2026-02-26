@@ -1,20 +1,23 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import { useMutation } from "@apollo/client/react";
 import { UPDATE_TOTAL_BUDGET } from "@/graphql/mutations/budget.mutation";
-import { validateBudget, validateTotalBudget } from "@/utils/budgetValidation";
+import { validateTotalBudget } from "@/utils/budgetValidation";
 import { useAuth } from "@/hooks/useAuth";
+import { GET_TOTAL_BUDGET } from "@/graphql/queries/budget.query";
 
 export default function EditTotalBudgetModal({
   onClose,
   totalAllocation,
-  currentBudget,
+  totalBudget,
 }) {
   const { user } = useAuth();
 
-  const [amount, setAmount] = useState(currentBudget);
+  const [amount, setAmount] = useState(totalBudget);
   const [errorMessage, setErrorMessage] = useState("");
+
   const [updateTotalBudget] = useMutation(UPDATE_TOTAL_BUDGET);
+
   const onSubmitTotalBudget = async () => {
     const { isValid, message } = validateTotalBudget(amount, totalAllocation);
 
@@ -28,6 +31,18 @@ export default function EditTotalBudgetModal({
           input: {
             totalBudget: parseFloat(amount),
           },
+        },
+        update: (cache, { data }) => {
+          cache.writeQuery({
+            query: GET_TOTAL_BUDGET,
+            variables: { userId: user.id },
+            data: {
+              getTotalBudget: {
+                totalBudget: parseFloat(amount),
+                __typename: "TotalBudget",
+              },
+            },
+          });
         },
       });
       onClose();

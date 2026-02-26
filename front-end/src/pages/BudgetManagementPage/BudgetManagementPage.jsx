@@ -488,7 +488,7 @@ export default function BudgetManagementPage() {
 
       {showTotalDialog && (
         <EditTotalBudgetModal
-          currentBudget={totalBudget}
+          totalBudget={totalBudget}
           onClose={() => setShowTotalDialog(false)}
           totalAllocation={totalAllocation}
         />

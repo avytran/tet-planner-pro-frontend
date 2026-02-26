@@ -10,7 +10,6 @@ export const useBudgetData = (userId) => {
   } = useQuery(GET_TOTAL_BUDGET, {
     variables: { userId },
     skip: !userId,
-    fetchPolicy: "network-only",
   });
 
   const {
@@ -20,7 +19,6 @@ export const useBudgetData = (userId) => {
   } = useQuery(GET_BUDGETS, {
     variables: { userId },
     skip: !userId,
-    fetchPolicy: "network-only",
   });
 
   const totalBudget = totalData?.getTotalBudget?.totalBudget ?? 0;
