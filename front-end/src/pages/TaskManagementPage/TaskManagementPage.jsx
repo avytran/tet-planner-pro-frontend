@@ -1,112 +1,30 @@
-import { useMemo, useState } from "react";
-import { PieChart } from "@mui/x-charts";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@apollo/client/react";
 import {
-  CalendarDaysIcon,
-  ChevronDownIcon,
   MagnifyingGlassIcon,
   PencilSquareIcon,
   PlusIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
-import { ShoppingFilter } from "../../components/ShoppingFilter";
+import {
+  GET_TASKS_OF_USER
+} from "../../graphql/queries/task.query";
 
-const TASK_STATUS_OPTIONS = ["To Do", "In Progress", "Done"];
-const PRIORITY_OPTIONS = ["Low", "Medium", "High"];
-const TIMELINE_OPTIONS = ["Before Tet", "30 Tet", "Mung 1-3"];
+import { useAuth } from "../../hooks/useAuth";
 
-const MOCK_TASKS = [
-  {
-    id: "task-1",
-    title: "Planning Mâm Ngũ Quả",
-    date: "2026-02-14",
-    category: "Food",
-    priority: "Medium",
-    status: "To Do",
-    timeline: "Before Tet",
-    budgetStatus: "Planning",
-    totalCost: 1200000,
-    barColor: "var(--color-accent)",
-  },
-  {
-    id: "task-2",
-    title: "Mua Hoa Trang Trí",
-    date: "2026-02-14",
-    category: "Decoration",
-    priority: "Low",
-    status: "In Progress",
-    timeline: "30 Tet",
-    budgetStatus: "Planning",
-    totalCost: 600000,
-    barColor: "var(--color-primary)",
-  },
-  {
-    id: "task-3",
-    title: "Chuẩn Bị Giỏ Quà",
-    date: "2026-02-14",
-    category: "Gift",
-    priority: "High",
-    status: "Done",
-    timeline: "Mung 1-3",
-    budgetStatus: "Completed",
-    totalCost: 1800000,
-    barColor: "var(--color-success)",
-  },
-  {
-    id: "task-4",
-    title: "Mua Áo Dài",
-    date: "2026-02-15",
-    category: "Cloth",
-    priority: "Medium",
-    status: "To Do",
-    timeline: "Before Tet",
-    budgetStatus: "Planning",
-    totalCost: 900000,
-    barColor: "var(--color-accent)",
-  },
-  {
-    id: "task-5",
-    title: "Lên Danh Sách Lì Xì",
-    date: "2026-02-16",
-    category: "Gift",
-    priority: "Low",
-    status: "In Progress",
-    timeline: "30 Tet",
-    budgetStatus: "Planning",
-    totalCost: 2500000,
-    barColor: "var(--color-primary)",
-  },
-  {
-    id: "task-6",
-    title: "Dọn Dẹp Sau Tết",
-    date: "2026-02-18",
-    category: "Decoration",
-    priority: "Low",
-    status: "Done",
-    timeline: "Mung 1-3",
-    budgetStatus: "Completed",
-    totalCost: 400000,
-    barColor: "var(--color-success)",
-  },
-];
+import { TaskItem } from "@/components/Task/TaskItem";
+import { formatTask } from "@/utils/formatTask.util";
+import { MutateTaskDialog } from "@/components/Task/MutateTaskDialog";
+import { TaskChart } from "@/components/Task/TaskChart";
+import { TaskProgress } from "@/components/Task/TaskProgress";
+import { TaskFilter } from "@/components/Task/TaskFilter";
 
-const STATUS_CLASS = {
-  "To Do": "text-primary-strong",
-  "In Progress": "text-accent",
-  Done: "text-success-strong",
-};
+import { findItemById } from "@/utils/findItemById";
+import { CHART_COLORS } from "@/constants/taskConstant";
+import { getTetTimelineAuto } from "@/utils/getTetTimelineAuto";
 
-const PRIORITY_CLASS = {
-  Low: "text-success",
-  Medium: "text-accent",
-  High: "text-danger",
-};
-
-const SORT_OPTIONS = {
-  date: "Date",
-  price: "Price",
-  quantity: "Quantity",
-};
+import { TASKS_PER_PAGE } from "@/constants/taskConstant";
 
 const getBudgetStatusFromTaskStatus = (taskStatus) =>
   taskStatus === "Done" ? "Completed" : "Planning";
@@ -129,27 +47,65 @@ const createEmptyFormState = () => ({
 });
 
 export default function TaskManagementPage() {
-  const [tasks, setTasks] = useState(MOCK_TASKS);
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState([]);
+
   const [searchValue, setSearchValue] = useState("");
-  const [sortBy, setSortBy] = useState("date");
   const [filters, setFilters] = useState({
     status: [],
     timeline: [],
     categories: [],
     priceRange: [0, 5000000],
   });
+
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
-  const [editingTaskId, setEditingTaskId] = useState(null);
-  const [taskForm, setTaskForm] = useState(createEmptyFormState());
-  const [formError, setFormError] = useState("");
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const {
+    data: tasksData,
+    loading: isTasksLoading,
+    error: tasksError,
+  } = useQuery(GET_TASKS_OF_USER, {
+    variables: {
+      userId: user?.id,
+      params: {
+        page: currentPage,
+        pageSize: TASKS_PER_PAGE
+      }
+    },
+    skip: !user?.id,
+  });
+
+  const totalPages = tasksData?.getTasksOfUser?.totalPages || 1;
+
+  // Reset page when filter/search change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchValue, filters]);
+
+  // Format Task
+  useEffect(() => {
+    if (!Array.isArray(tasksData?.getTasksOfUser.tasks)) {
+      return;
+    }
+    setTasks(tasksData.getTasksOfUser.tasks.map(formatTask));
+  }, [tasksData]);
 
   const categories = useMemo(() => {
-    return [...new Set(tasks.map((task) => task.category))];
+    const map = new Map();
+
+    tasks.forEach(task => {
+      if (task.category) {
+        map.set(task.category.id, task.category);
+      }
+    });
+
+    return Array.from(map.values());
   }, [tasks]);
 
   const visibleTasks = useMemo(() => {
     const normalizedSearch = searchValue.trim().toLowerCase();
-    const [minPrice, maxPrice] = filters.priceRange;
 
     const filtered = tasks.filter((task) => {
       const matchesSearch =
@@ -158,7 +114,7 @@ export default function TaskManagementPage() {
 
       const matchesStatus =
         filters.status.length === 0 ||
-        filters.status.includes(task.budgetStatus);
+        filters.status.includes(task.status);
 
       const matchesTimeline =
         filters.timeline.length === 0 ||
@@ -168,44 +124,30 @@ export default function TaskManagementPage() {
         filters.categories.length === 0 ||
         filters.categories.includes(task.category);
 
-      const matchesPrice =
-        task.totalCost >= minPrice && task.totalCost <= maxPrice;
-
       return (
         matchesSearch &&
         matchesStatus &&
         matchesTimeline &&
-        matchesCategory &&
-        matchesPrice
+        matchesCategory
       );
     });
 
-    return [...filtered].sort((left, right) => {
-      if (sortBy === "price") return right.totalCost - left.totalCost;
-      if (sortBy === "quantity") return left.title.localeCompare(right.title);
-      return new Date(left.date).getTime() - new Date(right.date).getTime();
-    });
-  }, [filters, searchValue, sortBy, tasks]);
+    return filtered;
+  }, [filters, searchValue, tasks]);
 
   const chartData = useMemo(() => {
-    const totals = categories.map((category) => {
+    const totals = categories.map((category, index) => {
       const count = tasks.filter((task) => task.category === category).length;
-      return { category, count };
+
+      return {
+        id: category.id,
+        value: count,
+        name: category.name,
+        color: CHART_COLORS[index % CHART_COLORS.length],
+      };
     });
 
-    const colorMap = {
-      Food: "var(--color-danger)",
-      Decoration: "var(--color-primary)",
-      Gift: "var(--color-accent)",
-      Cloth: "var(--color-success)",
-    };
-
-    return totals.map((item, index) => ({
-      id: index,
-      value: item.count,
-      label: item.category,
-      color: colorMap[item.category] || "var(--color-primary)",
-    }));
+    return totals;
   }, [categories, tasks]);
 
   const summary = useMemo(() => {
@@ -215,7 +157,7 @@ export default function TaskManagementPage() {
     ).length;
     const done = tasks.filter((task) => task.status === "Done").length;
     const before = tasks.filter(
-      (task) => task.timeline === "Before Tet",
+      (task) => task.timeline === getTetTimelineAuto(new Date()),
     ).length;
 
     return {
@@ -225,101 +167,22 @@ export default function TaskManagementPage() {
     };
   }, [tasks]);
 
-  const onStatusChange = (taskId, nextStatus) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: nextStatus,
-              budgetStatus: nextStatus === "Done" ? "Completed" : "Planning",
-            }
-          : task,
-      ),
-    );
-  };
-
   const clearAll = () => {
     setTasks([]);
   };
 
-  const openCreateTaskForm = () => {
-    setEditingTaskId(null);
-    setTaskForm(createEmptyFormState());
-    setFormError("");
+  const handleOpenCreateTaskForm = () => {
     setIsTaskFormOpen(true);
   };
 
-  const openEditTaskForm = (task) => {
-    setEditingTaskId(task.id);
-    setTaskForm({
-      title: task.title,
-      category: task.category,
-      date: task.date,
-      description: task.description || "",
-      priority: task.priority,
-      status: task.status,
-      timeline: task.timeline,
-      totalCost: task.totalCost.toString(),
-    });
-    setFormError("");
+  const handleOpenEditTaskForm = (task) => {
+    setSelectedTaskId(task.id);
     setIsTaskFormOpen(true);
   };
 
-  const closeTaskForm = () => {
+  const handleCloseTaskForm = () => {
     setIsTaskFormOpen(false);
-    setEditingTaskId(null);
-    setTaskForm(createEmptyFormState());
-    setFormError("");
-  };
-
-  const onTaskFormFieldChange = (field, value) => {
-    setTaskForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const submitTaskForm = (event) => {
-    event.preventDefault();
-
-    if (!taskForm.title.trim() || !taskForm.category.trim() || !taskForm.date) {
-      setFormError("Please fill in title, category and due date.");
-      return;
-    }
-
-    const normalizedCost = Number(taskForm.totalCost) || 0;
-
-    const nextTaskData = {
-      title: taskForm.title.trim(),
-      category: taskForm.category.trim(),
-      date: taskForm.date,
-      description: taskForm.description.trim(),
-      priority: taskForm.priority,
-      status: taskForm.status,
-      timeline: taskForm.timeline,
-      totalCost: normalizedCost,
-      budgetStatus: getBudgetStatusFromTaskStatus(taskForm.status),
-      barColor: getBarColorFromPriority(taskForm.priority),
-    };
-
-    if (editingTaskId) {
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === editingTaskId
-            ? {
-                ...task,
-                ...nextTaskData,
-              }
-            : task,
-        ),
-      );
-    } else {
-      const nextTask = {
-        id: `task-${Date.now()}`,
-        ...nextTaskData,
-      };
-      setTasks((prev) => [nextTask, ...prev]);
-    }
-
-    closeTaskForm();
+    setSelectedTaskId(null);
   };
 
   return (
@@ -333,7 +196,7 @@ export default function TaskManagementPage() {
               label="Add Task"
               color="accent"
               className="!rounded-full !px-5 !py-2 text-sm"
-              onClick={openCreateTaskForm}
+              onClick={handleOpenCreateTaskForm}
             />
             <CommonButton
               label="Clear All"
@@ -344,14 +207,24 @@ export default function TaskManagementPage() {
           </div>
         </div>
 
+        {tasksError && (
+          <p className="mb-4 rounded-lg border border-danger/30 bg-danger/5 px-3 py-2 text-sm text-danger">
+            Failed to load tasks from backend. Showing local data.
+          </p>
+        )}
+
+        {/* Main */}
         <div className="flex flex-col gap-4 lg:flex-row">
-          <ShoppingFilter
+          {/* Left - Filter */}
+          <TaskFilter
             filters={filters}
             onFilterChange={setFilters}
             categories={categories}
           />
 
+          {/* Mid - Task List */}
           <div className="min-w-0 flex-1">
+            {/* Search */}
             <div className="mb-4 flex flex-wrap items-center gap-3">
               <div className="relative min-w-[260px] flex-1">
                 <input
@@ -363,102 +236,17 @@ export default function TaskManagementPage() {
                 />
                 <MagnifyingGlassIcon className="pointer-events-none absolute right-3 top-2.5 h-4 w-4 text-primary/70" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-primary-strong/80">Sort by</span>
-                <div className="relative">
-                  <select
-                    value={sortBy}
-                    onChange={(event) => setSortBy(event.target.value)}
-                    className="appearance-none rounded-lg border border-primary/20 bg-surface py-2 pl-3 pr-8 text-sm text-primary-strong outline-none"
-                  >
-                    {Object.entries(SORT_OPTIONS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDownIcon className="pointer-events-none absolute right-2 top-2.5 h-4 w-4 text-primary/70" />
-                </div>
-              </div>
             </div>
 
+            {/* List */}
             <ul className="space-y-3">
               {visibleTasks.map((task) => (
-                <li
-                  key={task.id}
-                  className="overflow-hidden rounded-xl border border-primary/10 bg-white shadow-[0_2px_6px_rgba(0,0,0,0.08)]"
-                >
-                  <div className="flex">
-                    <span
-                      className="w-3"
-                      style={{ backgroundColor: task.barColor }}
-                    ></span>
-                    <div className="grid flex-1 grid-cols-1 gap-3 p-3 md:grid-cols-[2fr_1fr_1fr_130px_auto] md:items-center md:gap-4">
-                      <div>
-                        <p className="text-sm font-semibold text-primary-strong">
-                          {task.title}
-                        </p>
-                        <div className="mt-1 flex items-center gap-1 text-xs text-primary-strong/70">
-                          <CalendarDaysIcon className="h-3.5 w-3.5" />
-                          <span>
-                            {new Date(task.date).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase text-primary-strong/55">
-                          Category
-                        </p>
-                        <p className="text-sm text-primary-strong">
-                          {task.category}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-[11px] font-semibold uppercase text-primary-strong/55">
-                          Priority
-                        </p>
-                        <p
-                          className={`text-sm font-semibold ${PRIORITY_CLASS[task.priority]}`}
-                        >
-                          {task.priority}
-                        </p>
-                      </div>
-
-                      <div className="relative w-full md:w-[130px]">
-                        <select
-                          value={task.status}
-                          onChange={(event) =>
-                            onStatusChange(task.id, event.target.value)
-                          }
-                          className={`w-full appearance-none rounded-lg border border-primary/20 bg-surface py-1.5 pl-3 pr-8 text-sm outline-none ${STATUS_CLASS[task.status]}`}
-                        >
-                          {TASK_STATUS_OPTIONS.map((statusOption) => (
-                            <option key={statusOption} value={statusOption}>
-                              {statusOption}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDownIcon className="pointer-events-none absolute right-2 top-2 h-4 w-4 text-primary/70" />
-                      </div>
-
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center rounded-lg border border-primary/20 px-2.5 py-1.5 text-primary hover:bg-primary/5"
-                        onClick={() => openEditTaskForm(task)}
-                        aria-label={`Edit ${task.title}`}
-                      >
-                        <PencilSquareIcon className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </li>
+                <TaskItem
+                  key={"task-" + task.id}
+                  task={task}
+                  handleOpenEditTaskForm={handleOpenEditTaskForm}
+                  currentPage={currentPage}
+                />
               ))}
 
               {visibleTasks.length === 0 && (
@@ -468,270 +256,61 @@ export default function TaskManagementPage() {
               )}
             </ul>
 
-            <div className="mt-5 flex justify-center text-sm text-primary">
-              <button type="button" className="inline-flex items-center gap-2">
-                <span>‹</span>
-                <span>Page</span>
-                <span>›</span>
+            {/* Pagination */}
+            <div className="mt-6 flex justify-center gap-2">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                Prev
+              </button>
+
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const page = i + 1;
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === page ? "bg-primary text-white" : "border"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Next
               </button>
             </div>
           </div>
 
+          {/* Right - Chart & Progress */}
           <aside className="w-full lg:w-[300px]">
-            <div className="mb-4 rounded-xl border border-primary/10 bg-white p-4">
-              <h2 className="mb-2 text-2xl font-semibold text-primary-strong">
-                Tasks in Categories
-              </h2>
-              <div className="flex justify-center">
-                <PieChart
-                  width={260}
-                  height={220}
-                  series={[
-                    {
-                      innerRadius: 40,
-                      outerRadius: 85,
-                      data: chartData,
-                    },
-                  ]}
-                  hideLegend
-                />
-              </div>
+            <TaskChart
+              chartData={chartData}
+            />
 
-              <div className="mt-1 flex flex-wrap justify-center gap-4 text-xs text-primary-strong/80">
-                {chartData.slice(0, 3).map((item) => (
-                  <div key={item.id} className="flex items-center gap-1">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    ></span>
-                    <span>{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-primary/10 bg-white p-4">
-              <h2 className="mb-4 text-3xl font-semibold text-primary-strong">
-                Task Overview
-              </h2>
-
-              <OverviewRow
-                title="Task In Progress"
-                value={summary.inProgress}
-                helperText="You've pending tasks"
-                colorClass="bg-accent"
-              />
-              <OverviewRow
-                title="Task Completed"
-                value={summary.done}
-                helperText="You've finished tasks"
-                colorClass="bg-success"
-              />
-              <OverviewRow
-                title="Current Timeline"
-                value={summary.before}
-                helperText="Before Tet"
-                colorClass="bg-primary"
-                isLast
-              />
-            </div>
+            <TaskProgress
+              summary={summary}
+            />
           </aside>
         </div>
       </div>
 
+      {/* Task Form */}
       {isTaskFormOpen && (
-        <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-2xl rounded-2xl border border-primary/10 bg-surface p-5 md:p-6">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-3xl font-bold text-primary">
-                  {editingTaskId ? "Edit Task" : "New Task"}
-                </h3>
-                <p className="mt-1 text-sm text-primary-strong/60">
-                  Tết is more fun when your deadline stays in line too.
-                </p>
-              </div>
-              <button
-                type="button"
-                className="rounded-full border border-primary/30 p-1 text-primary"
-                onClick={closeTaskForm}
-                aria-label="Close form"
-              >
-                <XMarkIcon className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form className="space-y-3" onSubmit={submitTaskForm}>
-              <FieldRow label="Title">
-                <input
-                  type="text"
-                  value={taskForm.title}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("title", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Task title"
-                />
-              </FieldRow>
-
-              <FieldRow label="Category">
-                <input
-                  type="text"
-                  value={taskForm.category}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("category", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Food, Decoration..."
-                  list="task-category-options"
-                />
-                <datalist id="task-category-options">
-                  {categories.map((category) => (
-                    <option key={category} value={category} />
-                  ))}
-                </datalist>
-              </FieldRow>
-
-              <FieldRow label="Due Time">
-                <input
-                  type="date"
-                  value={taskForm.date}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("date", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                />
-              </FieldRow>
-
-              <FieldRow label="Description">
-                <input
-                  type="text"
-                  value={taskForm.description}
-                  onChange={(event) =>
-                    onTaskFormFieldChange("description", event.target.value)
-                  }
-                  className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  placeholder="Task description"
-                />
-              </FieldRow>
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <FieldRow label="Priority" inline>
-                  <select
-                    value={taskForm.priority}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("priority", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {PRIORITY_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-
-                <FieldRow label="Status" inline>
-                  <select
-                    value={taskForm.status}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("status", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {TASK_STATUS_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <FieldRow label="Timeline" inline>
-                  <select
-                    value={taskForm.timeline}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("timeline", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  >
-                    {TIMELINE_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </FieldRow>
-
-                <FieldRow label="Budget (VND)" inline>
-                  <input
-                    type="number"
-                    min={0}
-                    value={taskForm.totalCost}
-                    onChange={(event) =>
-                      onTaskFormFieldChange("totalCost", event.target.value)
-                    }
-                    className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
-                  />
-                </FieldRow>
-              </div>
-
-              {formError && <p className="text-sm text-danger">{formError}</p>}
-
-              <div className="mt-5 flex justify-center gap-3">
-                <button
-                  type="button"
-                  className="rounded-full border border-primary/30 px-5 py-2 text-sm text-primary"
-                  onClick={closeTaskForm}
-                >
-                  Cancel
-                </button>
-                <CommonButton
-                  type="submit"
-                  label={editingTaskId ? "Save Change" : "Create Task"}
-                  color="accent"
-                  className="!rounded-full !px-6 !py-2 text-sm"
-                />
-              </div>
-            </form>
-          </div>
-        </div>
+        <MutateTaskDialog
+          selectedTask={findItemById(tasks, selectedTaskId)}
+          handleCloseTaskForm={handleCloseTaskForm}
+          currentPage={currentPage}
+        />
       )}
     </section>
-  );
-}
-
-function FieldRow({ label, children, inline = false }) {
-  return (
-    <div
-      className={`grid gap-2 ${inline ? "grid-cols-[80px_1fr] items-center" : "grid-cols-1"}`}
-    >
-      <label className="text-sm font-semibold text-primary-strong">
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-function OverviewRow({ title, value, helperText, colorClass, isLast = false }) {
-  return (
-    <div className={isLast ? "" : "mb-4"}>
-      <div className="mb-1 flex items-center justify-between">
-        <p className="text-sm font-medium text-primary-strong">{title}</p>
-        <ChevronDownIcon className="h-4 w-4 text-primary-strong/75" />
-      </div>
-      <p className="mb-1 text-xs text-primary-strong/75">{value}%</p>
-      <div className="h-2 overflow-hidden rounded-full bg-primary/10">
-        <div
-          className={`h-full ${colorClass}`}
-          style={{ width: `${value}%` }}
-        ></div>
-      </div>
-      <p className="mt-1 text-[11px] text-primary-strong/60">{helperText}</p>
-    </div>
   );
 }
