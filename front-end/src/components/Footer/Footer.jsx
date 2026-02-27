@@ -38,7 +38,7 @@ const Footer = () => {
 
         <div className="footer-contact">
           <h4>Contact</h4>
-          <p>Email: support@luckymoney.vn</p>
+          <p>Email: stetplannerproluckymoney@gmail.com</p>
           <p>Hotline: 0901 234 567</p>
           <p>Address: Q.1, TP.HCM</p>
         </div>

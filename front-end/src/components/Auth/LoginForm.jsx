@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useMutation } from "@apollo/client/react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Card, CardSection } from "./Card";
 import { InputField } from "./InputField";
 import { FaRegUserCircle } from "react-icons/fa";
@@ -10,14 +9,16 @@ import { TbLockPassword } from "react-icons/tb";
 import AuthButton from "./Button";
 import logo from "../../assets/images/logo.jpg";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { LOGIN } from "@/graphql/mutations/auth.mutation";
 import { loginSchema } from "@/schemas/login.schema";
+import { useContext } from "react";
+import { AuthContext } from "@/context/AuthContext";
 
 export const LoginForm = () => {
-  const navigate = useNavigate();
-
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const { login } = useContext(AuthContext);
 
   const {
     register,
@@ -27,23 +28,14 @@ export const LoginForm = () => {
     resolver: yupResolver(loginSchema)
   })
 
-  const [login, { loading }] = useMutation(LOGIN);
-
   const onSubmit = async (formData) => {
+    setSubmitting(true);
     setError("");
 
     try {
-      const { email, password } =  formData;
+      const { email, password } = formData;
 
-      const { data } = await login({
-        variables: {
-          input: { email, password },
-        },
-      });
-
-      if (data.login.success) {
-        navigate("/");
-      }
+      await login({ email, password });
 
     } catch (err) {
       let errorMessage = "Something went wrong. Please try again.";
@@ -61,6 +53,8 @@ export const LoginForm = () => {
       }
 
       setError(errorMessage);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -81,7 +75,7 @@ export const LoginForm = () => {
               label="Email"
               placeholder="m@example.com"
               required
-              disabled={loading}
+              disabled={submitting}
               error={errors.email?.message}
               {...register("email")}
             />
@@ -93,7 +87,7 @@ export const LoginForm = () => {
               placeholder="••••••••"
               required
               icon={<TbLockPassword />}
-              disabled={loading}
+              disabled={submitting}
               rightIcon={showPassword ? <FaEyeSlash /> : <FaEye />}
               onRightIconClick={() => setShowPassword(!showPassword)}
               error={errors.password?.message}
@@ -114,8 +108,8 @@ export const LoginForm = () => {
               <AuthButton
                 type="submit"
                 color="danger"
-                label={loading ? "Logging in..." : "Login"}
-                disabled={loading}
+                label={submitting ? "Logging in..." : "Login"}
+                disabled={submitting}
               />
             </div>
 

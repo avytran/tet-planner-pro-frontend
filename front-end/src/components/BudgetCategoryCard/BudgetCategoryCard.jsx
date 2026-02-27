@@ -4,35 +4,64 @@ import {
   TrashIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
-// import { Progress } from "@/components/ui/progress";
-import React from "react";
+import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import { useAuth } from "@/hooks/useAuth";
+import EditBudgetModal from "../BudgetModal/EditBugetModal";
+import { useDispatch } from "react-redux";
+import { deleteBudgetThunk } from "@/features/budget/budgetThunks";
 
 export default function BudgetCategoryCard({
+  id,
   category,
   amountSpent,
   totalAmount,
   itemsCount,
 }) {
+  const { user } = useAuth();
+  const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+
   const remainingAmount = totalAmount - amountSpent;
   const percentageUsed = ((amountSpent / totalAmount) * 100).toFixed(2);
-  const percentegeRemain = (100 - percentageUsed).toFixed(2);
+  const percentegeRemain = Number((100 - percentageUsed).toFixed(2));
   let color = "success";
   if (percentageUsed > 50 && percentageUsed <= 80) {
     color = "accent-soft";
   } else if (percentageUsed > 80) {
     color = "danger";
   }
+
+  const dispatch = useDispatch();
+
+  const handleDelete = async () => {
+    try {
+      await dispatch(
+        deleteBudgetThunk({ budgetId: id, userId: user.id }),
+      ).unwrap();
+
+      console.log("Deleted successfully");
+    } catch (err) {
+      alert("Delete failed");
+      console.log(err);
+    }
+  };
+
   return (
     <div className="p-10 w-xs md:w-sm bg-white rounded-[40px] flex flex-col gap-4 shrink-0 ">
       <div className="flex ">
-        <button className=" cursor-pointer p-2 rounded-xl hover:bg-bg">
+        <button
+          className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
+          onClick={() => setShowBudgetDialog(true)}
+        >
           <PencilIcon className="w-5 h-5  " />
         </button>
-        <button className=" cursor-pointer p-2 rounded-xl hover:bg-bg">
+        <button
+          className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
+          onClick={handleDelete}
+        >
           <TrashIcon className="w-5 h-5  " />
         </button>
       </div>
@@ -87,7 +116,7 @@ export default function BudgetCategoryCard({
       </div>
       <div className="flex justify-between relative">
         <CommonButton
-          label={"Detail"}
+          label={"Shopping List"}
           trailingIcon={<ArrowRightIcon className="h-5 w-5" />}
         />
         <div className="flex">
@@ -100,6 +129,16 @@ export default function BudgetCategoryCard({
           </div>
         </div>
       </div>
+      {showBudgetDialog && (
+        <EditBudgetModal
+          budgetName={category}
+          currentBudget={totalAmount}
+          spending={amountSpent}
+          type={"Edit"}
+          onClose={() => setShowBudgetDialog(false)}
+          id={id}
+        />
+      )}
     </div>
   );
 }

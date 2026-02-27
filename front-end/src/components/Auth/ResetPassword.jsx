@@ -14,7 +14,7 @@ export const ResetPasswordForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get("token");
-  
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -48,10 +48,10 @@ export const ResetPasswordForm = () => {
       const { data } = await resetPassword({
         variables: {
           input: {
-            token, 
+            token,
             newPassword,
-          }
-        }
+          },
+        },
       });
 
       if (data.resetPassword?.message) {
@@ -65,8 +65,8 @@ export const ResetPasswordForm = () => {
     } catch (err) {
       let message = "Failed to reset password. Please try again.";
 
-      if (err.graphqlErrors?.length) {
-        message = err.graphqlErrors[0].message;
+      if (err.errors?.length) {
+        message = err.errors[0].message;
       } else if (err.networkError) {
         message = "Server error. Please try again.";
       }
@@ -81,10 +81,15 @@ export const ResetPasswordForm = () => {
         <h1 className="font-bold text-primary-strong text-center text-5xl">
           RESET PASSWORD
         </h1>
-        <p className="text-center font-body-strong text-black">What would you like your new password to be?</p>
+        <p className="text-center font-body-strong text-black">
+          What would you like your new password to be?
+        </p>
       </div>
 
-      <form className="space-y-4 w-1/3 mx-auto" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="space-y-4 w-1/3 mx-auto"
+        onSubmit={handleSubmit(onSubmit)}
+      >
         <InputField
           icon={<TbLockPassword />}
           label="New Password"
@@ -92,7 +97,8 @@ export const ResetPasswordForm = () => {
           placeholder="••••••••"
           required
           disabled={loading || !token}
-          error={errors.newPassword?.message}x
+          error={errors.newPassword?.message}
+          x
           {...register("newPassword")}
         />
         <InputField
@@ -107,21 +113,27 @@ export const ResetPasswordForm = () => {
         />
 
         {success && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <div
+            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
             <span className="block sm:inline">{success}</span>
           </div>
         )}
-        
+
         {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+            role="alert"
+          >
             <span className="block sm:inline">{error}</span>
           </div>
         )}
 
-        <div className="flex justify-center mt-15"> 
-          <AuthButton 
-            type="submit" 
-            color="danger" 
+        <div className="flex justify-center mt-15">
+          <AuthButton
+            type="submit"
+            color="danger"
             label={loading ? "Resetting..." : "Reset Password"}
             disabled={loading || !token}
           />

@@ -66,8 +66,8 @@ function getNewMoonDay(k, timeZone) {
 
     let deltaT =
         T < -11
-        ? 0.001 + 0.000839 * T + 0.0002261 * T2 - 0.00000845 * T3
-        : -0.000278 + 0.000265 * T + 0.000262 * T2;
+            ? 0.001 + 0.000839 * T + 0.0002261 * T2 - 0.00000845 * T3
+            : -0.000278 + 0.000265 * T + 0.000262 * T2;
 
     const JdNew = Jd1 + C1 - deltaT;
     return INT(JdNew + 0.5 + timeZone / 24);
@@ -115,7 +115,12 @@ function getLeapMonthOffset(a11, timeZone) {
     return i - 1;
 }
 
-function convertSolar2Lunar(dd, mm, yy, timeZone = 7) {
+export function convertSolar2Lunar(
+    dd,
+    mm,
+    yy,
+    timeZone = 7
+) {
     const dayNumber = jdFromDate(dd, mm, yy);
     const k = INT((dayNumber - 2415021.076998695) / 29.530588853);
     let monthStart = getNewMoonDay(k + 1, timeZone);
@@ -155,21 +160,23 @@ function convertSolar2Lunar(dd, mm, yy, timeZone = 7) {
 }
 
 export function getTetTimelineAuto(dueTime) {
-  const date = new Date(dueTime);
+    const date = new Date(dueTime);
 
-  const dd = date.getDate();
-  const mm = date.getMonth() + 1;
-  const yyyy = date.getFullYear();
+    const dd = date.getDate();
+    const mm = date.getMonth() + 1;
+    const yyyy = date.getFullYear();
 
-  const [lunarDay, lunarMonth] = convertSolar2Lunar(dd, mm, yyyy, 7);
+    const [lunarDay, lunarMonth] = convertSolar2Lunar(dd, mm, yyyy, 7);
 
-  if (lunarMonth === 1 && lunarDay >= 1 && lunarDay <= 3) {
-    return "During Tet";
-  }
+    // During Tet: 1-3 lunar January
+    if (lunarMonth === 1 && lunarDay >= 1 && lunarDay <= 3) {
+        return "During_Tet";
+    }
 
-  if (lunarMonth === 12) {
-    return "Pre Tet";
-  }
+    // Before Tet: lunar December
+    if (lunarMonth === 12) {
+        return "Pre_Tet";
+    }
 
-  return "After Tet";
+    return "After_Tet";
 }
