@@ -1,19 +1,20 @@
 import { useState, useContext, useEffect } from 'react';
 import { ShoppingFilter } from '../../components/ShoppingFilter/ShoppingFilter';
 import { ShoppingTable } from '../../components/ShoppingTable/ShoppingTable';
-import RowActionDialog from '../../components/ShoppingTable/RowActionDialog';
 import CommonButton from '../../components/Button/CommonButton';
 import ShoppingItemMessages from '../../components/ShoppingItemDialog/ShoppingItemMessages';
 import CategoryCostWidget from '../../components/ShoppingListWidgets/CategoryCostWidget';
 import { filterShoppingItems } from '../../utils/shoppingItemFilter';
-import { useShoppingItemHandlers } from '../../hooks/useShoppingItemHandlers';
 import { AuthContext } from '../../context/AuthContext';
 import ProgressWidget from '../../components/ShoppingListWidgets/ProgressWidget';
 import { ShoppingItemDialog } from '@/components/ShoppingItemDialog';
 
 import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_SHOPPING_LIST_DATA } from '../../graphql/queries/shopping.query';
-import { UPDATE_SHOPPING_ITEM, DELETE_SHOPPING_ITEM, CREATE_SHOPPING_ITEM } from '../../graphql/mutations/shopping.mutation';
+import { DELETE_SHOPPING_ITEM } from '../../graphql/mutations/shopping.mutation';
+import Spinner from '@/components/Loading/Spinner/Spinner';
+
+import { ITEMS_PER_PAGE } from '@/constants/shoppingConstant';
 
 export default function ShoppingListPage() {
     const [filters, setFilters] = useState({
@@ -24,18 +25,17 @@ export default function ShoppingListPage() {
     });
     const { user } = useContext(AuthContext);
     const [openAddDialog, setOpenAddDialog] = useState(false);
-    const [rowActionDialog, setRowActionDialog] = useState({ open: false, rowIdx: null });
-    const [editDialog, setEditDialog] = useState({ open: true, data: null });
-    const [updateShoppingItem] = useMutation(UPDATE_SHOPPING_ITEM);
     const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM);
-    const [createShoppingItem] = useMutation(CREATE_SHOPPING_ITEM);
     const [searchValue, setSearchValue] = useState("");
     const [sortValue, setSortValue] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     const buildParams = () => {
         const params = {
             sortBy: sortValue || undefined,
             sortOrder: "asc",
+            page: currentPage,
+            pageSize: ITEMS_PER_PAGE
         };
         return params;
     };
@@ -48,8 +48,10 @@ export default function ShoppingListPage() {
         },
         fetchPolicy: "cache-and-network",
     });
+
     const currentData = data || previousData;
 
+    const totalPages = currentData?.getShoppingItemsOfUser?.totalPages || 1;
     const rawItems = (currentData?.getShoppingItemsOfUser?.items || []).map(item => ({
         ...item
     }));
@@ -65,7 +67,6 @@ export default function ShoppingListPage() {
     }, [maxPrice]);
 
     const budgets = currentData?.getBudgetsOfUser || [];
-    const tasks = currentData?.getTasksOfUser?.tasks || [];
     const totalBudget = currentData?.getTotalBudget?.totalBudget || 0;
 
     useEffect(() => {
@@ -97,13 +98,9 @@ export default function ShoppingListPage() {
         };
     });
 
-    useEffect(() => {
-        if (rowActionDialog.open && (rowActionDialog.rowIdx == null || rowActionDialog.rowIdx >= shoppingItems.length)) {
-            setRowActionDialog({ open: false, rowIdx: null });
-        }
-    }, [shoppingItems.length]);
-
-    if (loading && !currentData) return <div className="p-10 text-center">Loading shopping items...</div>;
+    if (loading && !currentData) {
+        return <Spinner />
+    }
     if (error) return <div className="p-10 text-center text-red-500">Error loading shopping items!</div>;
 
     return (
@@ -205,7 +202,32 @@ export default function ShoppingListPage() {
                                 <div className="min-w-full">
                                     <ShoppingTable
                                         items={shoppingItems}
+                                        refetch={refetch}
                                     />
+                                </div>
+                                {/* Pagination */}
+                                <div className="mt-6 flex justify-center gap-2">
+
+                                    <button
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage((p) => p - 1)}
+                                    >
+                                        Prev
+                                    </button>
+
+                                    <button
+                                        onClick={() => setCurrentPage(page)}
+                                        className="px-3 py-1 rounded border"
+                                    >
+                                        {currentPage}
+                                    </button>
+
+                                    <button
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage((p) => p + 1)}
+                                    >
+                                        Next
+                                    </button>
                                 </div>
                             </div>
                         </div>

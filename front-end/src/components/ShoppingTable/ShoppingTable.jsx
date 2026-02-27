@@ -11,14 +11,18 @@ import { ShoppingItemDialog } from '../ShoppingItemDialog';
 import { getStatusBadgeStyle } from '@/utils/getItemStatusBadgeStyle';
 import { formatDate } from '@/utils/formatDate';
 
-export const ShoppingTable = ({ mode = "display", items = [] }) => {
+export const ShoppingTable = ({ mode = "display", items = [], refetch }) => {
     const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
     const [openConfirm, setOpenConfirm] = useState(false);
     const [openEditDialog, setOpenEditDialog] = useState(false);
     const [seletedItem, setSeletedItem] = useState(null);
 
-    const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM);
+    const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM, {
+        onCompleted: () => {
+            refetch();
+        },
+    });
 
     const handleClickDeleteButton = (id) => {
         setSeletedItem(id);
@@ -48,7 +52,7 @@ export const ShoppingTable = ({ mode = "display", items = [] }) => {
                 return item;
             }
         }
-    }, [seletedItem])
+    }, [seletedItem, items])
 
     return (
         <div className="flex-1 w-full">
@@ -57,6 +61,7 @@ export const ShoppingTable = ({ mode = "display", items = [] }) => {
                     <ShoppingItemDialog
                         onClose={() => { setOpenEditDialog(false) }}
                         item={editedItem}
+                        refetch={refetch}
                     />
                 )
             }

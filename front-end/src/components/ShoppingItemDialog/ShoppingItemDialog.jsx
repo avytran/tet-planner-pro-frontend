@@ -17,7 +17,8 @@ import { formatDate } from "@/utils/formatDate";
 
 export const ShoppingItemDialog = ({
     onClose,
-    item = {}
+    item = {},
+    refetch
 }) => {
     const { user } = useAuth();
 
@@ -59,16 +60,33 @@ export const ShoppingItemDialog = ({
         skip: !budgetId
     })
 
+    const totalPages = shoppingItemsData?.getShoppingItemsOfUser?.totalPages || 1;
     const shoppingItemsOfTask = shoppingItemsData?.getShoppingItemsOfUser?.items || [];
-    const { allocatedAmount, summary } = budgetData?.getBudgetByIdOfUser ?? 0;
+    const allocatedAmount = budgetData?.getBudgetByIdOfUser?.allocatedAmount || 0;
+    const summary = budgetData?.getBudgetByIdOfUser?.summary || 0;
+
+    const isEdit = Boolean(item?.id);
+
+    const oldItemTotal = useMemo(() => {
+        return (item?.price || 0) * (item?.quantity || 0);
+    }, [item]);
+
+    const newItemTotal = useMemo(() => {
+        return (Number(price) || 0) * (Number(quantity) || 0);
+    }, [price, quantity]);
 
     const totalShoppingCost = useMemo(() => {
-        return (price * quantity + summary) || 0;
-    }, [price, quantity, summary]);
+        if (!summary) return newItemTotal;
+
+        return isEdit
+            ? summary - oldItemTotal + newItemTotal
+            : summary + newItemTotal;
+    }, [summary, oldItemTotal, newItemTotal, isEdit]);
 
     const remainingBudget = useMemo(() => {
-        return (allocatedAmount - totalShoppingCost) || 0;
-    }, [budgetId, totalShoppingCost]);
+        if (!allocatedAmount) return 0;
+        return allocatedAmount - totalShoppingCost;
+    }, [allocatedAmount, totalShoppingCost]);
 
     return (
         <FormProvider {...methods}>
@@ -101,9 +119,10 @@ export const ShoppingItemDialog = ({
                         </div>
 
                         {/* Form section */}
-                        <ShoppingItemForm 
+                        <ShoppingItemForm
                             itemId={item.id}
                             onClose={onClose}
+                            refetch={refetch}
                         />
 
                         {/* Preview added section */}
@@ -113,9 +132,9 @@ export const ShoppingItemDialog = ({
                                 <h3 className="text-lg font-semibold text-primary mb-3">
                                     Shopping Items of Task
                                 </h3>
-                                <ShoppingTable 
+                                <ShoppingTable
                                     mode="mutate"
-                                    items={shoppingItemsOfTask} 
+                                    items={shoppingItemsOfTask}
                                 />
                             </div>
 

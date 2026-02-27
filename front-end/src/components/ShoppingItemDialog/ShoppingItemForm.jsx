@@ -15,7 +15,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import CommonButton from "../Button/CommonButton";
 
-export default function ShoppingItemForm({ onClose, itemId }) {
+export default function ShoppingItemForm({ onClose, itemId, refetch }) {
     const { user } = useAuth();
 
     const { data: formFieldsData } = useQuery(GET_SHOPPING_FORM_DATA, {
@@ -27,7 +27,11 @@ export default function ShoppingItemForm({ onClose, itemId }) {
     const budgetCategories = formFieldsData?.getBudgetsOfUser;
     const tasks = formFieldsData?.getTasksOfUser?.tasks;
 
-    const [mutateShoppingItem] = useMutation(!!itemId ? UPDATE_SHOPPING_ITEM : CREATE_SHOPPING_ITEM);
+    const [mutateShoppingItem] = useMutation(!!itemId ? UPDATE_SHOPPING_ITEM : CREATE_SHOPPING_ITEM, {
+        onCompleted: () => {
+            refetch();
+        }
+    });
 
     const {
         register,
@@ -178,7 +182,7 @@ export default function ShoppingItemForm({ onClose, itemId }) {
                                 {TIMELINE_MAPPING[getTetTimelineAuto(duedTime)]}
                             </span>
                         </div>
-                        )}
+                    )}
                 </FieldRow>
 
                 {/* Status */}
@@ -216,19 +220,18 @@ export default function ShoppingItemForm({ onClose, itemId }) {
 }
 
 function FieldRow({ label, children, inline = false }) {
-  return (
-    <div
-      className={`grid gap-1 items-start ${
-        inline ? "grid-cols-[80px_1fr]" : "grid-cols-1"
-      }`}
-    >
-      <label className="text-sm font-semibold text-primary-strong leading-none">
-        {label}
-      </label>
+    return (
+        <div
+            className={`grid gap-1 items-start ${inline ? "grid-cols-[80px_1fr]" : "grid-cols-1"
+                }`}
+        >
+            <label className="text-sm font-semibold text-primary-strong leading-none">
+                {label}
+            </label>
 
-      <div className="flex flex-col gap-1 min-h-[52px]">
-        {children}
-      </div>
-    </div>
-  );
+            <div className="flex flex-col gap-1 min-h-[52px]">
+                {children}
+            </div>
+        </div>
+    );
 }

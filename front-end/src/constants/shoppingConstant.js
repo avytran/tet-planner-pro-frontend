@@ -4,3 +4,5 @@ export const TIMELINE_MAPPING = {
   During_Tet: "During Tet",
   After_Tet: "After Tet",
 }
+
+export const ITEMS_PER_PAGE = 10;
