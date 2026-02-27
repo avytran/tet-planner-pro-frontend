@@ -8,8 +8,7 @@ import { apolloClient } from "./apollo/client.js";
 import { AuthProvider } from "./context/AuthContext";
 import { Provider } from "react-redux";
 import store from "./app/store";
-
-document.documentElement.setAttribute("data-theme", "apricot");
+import { ThemeProvider } from "./context/ThemeContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -17,7 +16,9 @@ createRoot(document.getElementById("root")).render(
       <ApolloProvider client={apolloClient}>
         <BrowserRouter>
           <AuthProvider>
-            <App />
+            <ThemeProvider>
+              <App />
+            </ThemeProvider>
           </AuthProvider>
         </BrowserRouter>
       </ApolloProvider>
