@@ -37,7 +37,7 @@ export default function ProfilePage() {
   if (loading) return <Spinner />;
 
   return (
-    <div className="profile-page">
+    <div className="px-4 py-12 md:p-20 flex flex-col md:flex-row gap-4 bg-white">
       <div className="flex-1  flex flex-col justify-center items-center">
         <h1 className="text-primary font-semibold text-5xl">My Profile</h1>
 
@@ -60,8 +60,8 @@ export default function ProfilePage() {
         </div>
       </div>
       <div className="flex-1">
-        <div className="flex py-5 gap-5 items-center">
-          <p className="font-bold text-primary text-2xl">Theme</p>
+        <div className="flex flex-col md:flex-row py-5 gap-5 ">
+          <p className="font-bold text-primary text-2xl ">Theme</p>
           <button
             className={`py-4  px-6 border border-pink-500 rounded-4xl hover:bg-pink-500 hover:text-white cursor-pointer ${theme === "blossom" ? "bg-pink-500 text-white" : "text-pink-500"}`}
             onClick={toggleTheme}
