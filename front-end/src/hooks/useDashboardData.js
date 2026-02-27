@@ -13,7 +13,7 @@ import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from
 
 export function useDashboardData() {
   const { user } = useContext(AuthContext);
-  const MAX_CATEGORY = 3;
+  const MAX_CATEGORY = 4;
 
   function useTasks(userId) {
     const { loading, error, data } = useQuery(GET_TASKS, {
@@ -80,20 +80,24 @@ export function useDashboardData() {
     categoryData.getTaskCategory.map(c => [c.id, c.name])
   );
 
-  const finalMap = Object.entries(
+  const sorted = Object.entries(
     tasksData.getTasks.reduce((acc, task) => {
       acc[task.categoryId] = (acc[task.categoryId] || 0) + 1;
       return acc;
     }, {})
-  ).sort((a, b) => b[1] - a[1])
-    .reduce((acc, [id, count], index) => {
-      if (index < MAX_CATEGORY) {
-        acc[id] = count;
-      } else {
-        acc.others = (acc.others || 0) + count;
-      }
-      return acc;
-    }, {});
+  ).sort((a, b) => b[1] - a[1]);
+
+  const finalMap =
+    sorted.length <= MAX_CATEGORY
+      ? Object.fromEntries(sorted)
+      : sorted.reduce((acc, [id, count], index) => {
+        if (index < MAX_CATEGORY - 1) { // top 3
+          acc[id] = count;
+        } else {
+          acc.others = (acc.others || 0) + count;
+        }
+        return acc;
+      }, {});
 
   const colors = [
     'var(--color-primary)',

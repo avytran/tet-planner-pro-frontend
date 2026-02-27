@@ -111,7 +111,7 @@ export function reminderNoti(tasks, items) {
 }
 
 
-export function progressTaskColor (tasksDone) {
+export function progressTaskColor(tasksDone) {
     if (tasksDone === 0) {
         return "#AEA9B1";
     }
@@ -123,7 +123,7 @@ export function progressTaskColor (tasksDone) {
     return "#0043CE";
 };
 
-export function progressBudgetColor (budgetSpent) {
+export function progressBudgetColor(budgetSpent) {
     if (budgetSpent === 0) {
         return "#AEA9B1";
     }
@@ -138,3 +138,36 @@ export function progressBudgetColor (budgetSpent) {
 
     return "var(--color-success)";
 };
+
+export function generateItems(days = 10, budgets = 4, itemsPerDay = 6) {
+    function randomDate(start, end) {
+        return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+    }
+    const budgetNames = ["Decor", "Cloth", "Food", "Gift", "Travel", "Family"];
+    const timelines = ["Pre_Tet", "During_Tet", "After_Tet"];
+
+    const data = [];
+
+    const startDate = new Date("2026-02-10");
+    const endDate = new Date("2026-03-10");
+
+    for (let i = 0; i < days * itemsPerDay; i++) {
+
+        const budgetIndex = Math.floor(Math.random() * budgets);
+        const randomDay = randomDate(startDate, endDate);
+
+        data.push({
+            price: Math.floor(Math.random() * 200000) + 20000,
+            quantity: Math.floor(Math.random() * 5) + 1,
+            timeline: timelines[Math.floor(Math.random() * timelines.length)],
+            status: "Completed",
+            updatedAt: randomDay.toISOString(),
+            budget: {
+                id: `budget-${budgetIndex}`,
+                name: budgetNames[budgetIndex]
+            }
+        });
+    }
+
+    return data;
+}
