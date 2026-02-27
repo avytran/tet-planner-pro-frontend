@@ -29,11 +29,13 @@ export const GET_SHOPPING_LIST_DATA = gql`
         }
 
         getTasksOfUser(userId: $userId) {
-            id
-            title
-            category {
+            tasks {
                 id
-                name
+                title
+                category {
+                    id
+                    name
+                }
             }
         }
             

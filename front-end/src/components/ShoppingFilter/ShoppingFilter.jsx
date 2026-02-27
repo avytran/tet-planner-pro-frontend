@@ -96,10 +96,10 @@ export const ShoppingFilter = ({
                     {categories.length > 0 ? (
                         categories.map((cat) => (
                             <FilterCheckbox 
-                                key={cat} 
-                                label={cat} 
-                                checked={filters.categories?.includes(cat)} 
-                                onChange={() => handleCheckboxChange('categories', cat)}
+                                key={cat.id} 
+                                label={cat.name} 
+                                checked={filters.categories?.includes(cat.id)} 
+                                onChange={() => handleCheckboxChange('categories', cat.id)}
                             />
                         ))
                     ) : (

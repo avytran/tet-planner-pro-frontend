@@ -67,7 +67,7 @@ export default function ShoppingListPage() {
     }, [maxPrice]);
 
     const budgets = currentData?.getBudgetsOfUser || [];
-    const tasks = currentData?.getTasksOfUser || [];
+    const tasks = currentData?.getTasksOfUser?.tasks || [];
     const totalBudget = currentData?.getTotalBudget?.totalBudget || 0;
 
     useEffect(() => {
@@ -169,7 +169,7 @@ export default function ShoppingListPage() {
                         <ShoppingFilter
                             filters={filters}
                             onFilterChange={setFilters}
-                            categories={budgetCategoryObjects.map(b => b.name)}
+                            categories={budgetCategoryObjects}
                             maxPrice={maxPrice}
                         />
                     </div>
