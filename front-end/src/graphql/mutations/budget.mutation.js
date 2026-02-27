@@ -26,6 +26,7 @@ export const CREATE_BUDGET = gql`
       id
       allocatedAmount
       name
+      summary
     }
   }
 `;

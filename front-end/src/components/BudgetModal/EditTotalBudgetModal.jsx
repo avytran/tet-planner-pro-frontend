@@ -1,56 +1,40 @@
 import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
-import { useMutation } from "@apollo/client/react";
-import { UPDATE_TOTAL_BUDGET } from "@/graphql/mutations/budget.mutation";
 import { validateTotalBudget } from "@/utils/budgetValidation";
 import { useAuth } from "@/hooks/useAuth";
-import { GET_TOTAL_BUDGET } from "@/graphql/queries/budget.query";
+import {
+  selectTotalAllocation,
+  selectTotalBudget,
+} from "@/features/budget/budgetSelectors";
+import { useDispatch, useSelector } from "react-redux";
+import { updateTotalBudgetThunk } from "@/features/budget/budgetThunks";
 
-export default function EditTotalBudgetModal({
-  onClose,
-  totalAllocation,
-  totalBudget,
-}) {
+export default function EditTotalBudgetModal({ onClose }) {
   const { user } = useAuth();
+  const dispatch = useDispatch();
 
+  const totalBudget = useSelector(selectTotalBudget);
+  const totalAllocation = useSelector(selectTotalAllocation);
   const [amount, setAmount] = useState(totalBudget);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const [updateTotalBudget] = useMutation(UPDATE_TOTAL_BUDGET);
-
   const onSubmitTotalBudget = async () => {
     const { isValid, message } = validateTotalBudget(amount, totalAllocation);
-
     setErrorMessage(message);
 
     if (!isValid) return;
+
     try {
-      await updateTotalBudget({
-        variables: {
+      await dispatch(
+        updateTotalBudgetThunk({
           userId: user.id,
-          input: {
-            totalBudget: parseFloat(amount),
-          },
-        },
-        update: (cache, { data }) => {
-          cache.writeQuery({
-            query: GET_TOTAL_BUDGET,
-            variables: { userId: user.id },
-            data: {
-              getTotalBudget: {
-                totalBudget: parseFloat(amount),
-                __typename: "TotalBudget",
-              },
-            },
-          });
-        },
-      });
+          amount: parseFloat(amount),
+        }),
+      ).unwrap();
+
       onClose();
     } catch (err) {
-      const message = err.networkError
-        ? "Server error. Please try again."
-        : "Update failed. Please try again.";
-      alert(message);
+      alert("Update failed. Please try again.");
     }
   };
 
@@ -66,8 +50,10 @@ export default function EditTotalBudgetModal({
           placeholder="Enter new budget"
           className="w-full p-2 border border-gray-300 rounded-xl mb-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        <p className="h-full flex justify-end mb-2">VND</p>
-        {errorMessage && <div className="text-danger">{errorMessage}</div>}
+        <p className="h-full flex justify-end ">VND</p>
+        {errorMessage && (
+          <div className="text-danger mt-2 mb-2">{errorMessage}</div>
+        )}
         <div className="flex justify-end gap-2">
           <CommonButton label={"Cancel"} color="secondary" onClick={onClose}>
             Cancel

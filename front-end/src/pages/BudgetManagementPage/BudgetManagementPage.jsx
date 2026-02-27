@@ -1,4 +1,4 @@
-import { useContext, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import ShoppingListCard from "../../components/ShoppingListCard/ShoppingListCard.jsx";
 import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import ShoppingListItem from "../../components/ShoppingListItem/ShoppingListItem.jsx";
@@ -15,8 +15,7 @@ import EditTotalBudgetModal from "@/components/BudgetModal/EditTotalBudgetModal.
 
 import { useAuth } from "@/hooks/useAuth.js";
 import EditBudgetModal from "@/components/BudgetModal/EditBugetModal.jsx";
-import { AuthContext } from "@/context/AuthContext.jsx";
-import { useBudgetData } from "@/hooks/useFetchBudgetData.js";
+import { useBudget } from "@/hooks/useBudget.js";
 import {
   useShoppingItemsByTimeline,
   useTopCostShoppingItems,
@@ -97,8 +96,6 @@ const lineChartData = [
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
-  // const { logout } = useContext(AuthContext);
-  // logout();
   const {
     totalBudget,
     totalSpending,
@@ -107,7 +104,7 @@ export default function BudgetManagementPage() {
     budgets,
     loading: budgetLoading,
     error: budgetError,
-  } = useBudgetData(user.id);
+  } = useBudget(user.id);
 
   const {
     preTet: preTetShoppingItems,
@@ -363,13 +360,13 @@ export default function BudgetManagementPage() {
   "
           >
             {budgets.length > 0 ? (
-              budgets.map((category, index) => (
+              budgets.map((item) => (
                 <BudgetCategoryCard
-                  key={index}
-                  id={category.id}
-                  category={category.name}
-                  amountSpent={category.summary}
-                  totalAmount={category.allocatedAmount}
+                  key={item.id}
+                  id={item.id}
+                  category={item.name}
+                  amountSpent={item.summary || 0}
+                  totalAmount={item.allocatedAmount}
                   // itemsCount={category.itemsCount}
                 />
               ))
@@ -487,16 +484,11 @@ export default function BudgetManagementPage() {
       </>
 
       {showTotalDialog && (
-        <EditTotalBudgetModal
-          totalBudget={totalBudget}
-          onClose={() => setShowTotalDialog(false)}
-          totalAllocation={totalAllocation}
-        />
+        <EditTotalBudgetModal onClose={() => setShowTotalDialog(false)} />
       )}
       {showBudgetDialog && (
         <EditBudgetModal
           type={"Add"}
-          totalBudget={totalBudget}
           onClose={() => setShowBudgetDialog(false)}
         />
       )}

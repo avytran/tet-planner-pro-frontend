@@ -4,20 +4,15 @@ import {
   TrashIcon,
   WalletIcon,
 } from "@heroicons/react/24/outline";
-// import { Progress } from "@/components/ui/progress";
-import React, { useState } from "react";
+import { useState } from "react";
 import CommonButton from "../Button/CommonButton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { useMutation } from "@apollo/client/react";
-import {
-  DELETE_BUDGET,
-  UPDATE_TOTAL_BUDGET,
-} from "@/graphql/mutations/budget.mutation";
 import { useAuth } from "@/hooks/useAuth";
 import EditBudgetModal from "../BudgetModal/EditBugetModal";
-import { GET_BUDGETS } from "@/graphql/queries/budget.query";
+import { useDispatch } from "react-redux";
+import { deleteBudgetThunk } from "@/features/budget/budgetThunks";
 
 export default function BudgetCategoryCard({
   id,
@@ -39,28 +34,18 @@ export default function BudgetCategoryCard({
     color = "danger";
   }
 
-  const [handleDeleteBudget] = useMutation(DELETE_BUDGET);
-  const onDeleteBudget = async () => {
+  const dispatch = useDispatch();
+
+  const handleDelete = async () => {
     try {
-      await handleDeleteBudget({
-        variables: {
-          deleteBudgetOfUserId: id,
-          userId: user.id,
-        },
-        refetchQueries: [
-          {
-            query: GET_BUDGETS,
-            variables: {
-              userId: user.id,
-            },
-          },
-        ],
-      });
+      await dispatch(
+        deleteBudgetThunk({ budgetId: id, userId: user.id }),
+      ).unwrap();
+
+      console.log("Deleted successfully");
     } catch (err) {
-      const message = err.networkError
-        ? "Server error. Please try again."
-        : "Update failed. Please try again.";
-      alert(err);
+      alert("Delete failed");
+      console.log(err);
     }
   };
 
@@ -75,7 +60,7 @@ export default function BudgetCategoryCard({
         </button>
         <button
           className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
-          onClick={onDeleteBudget}
+          onClick={handleDelete}
         >
           <TrashIcon className="w-5 h-5  " />
         </button>
@@ -148,8 +133,8 @@ export default function BudgetCategoryCard({
         <EditBudgetModal
           budgetName={category}
           currentBudget={totalAmount}
+          spending={amountSpent}
           type={"Edit"}
-          // totalBudget={totalBudget}
           onClose={() => setShowBudgetDialog(false)}
           id={id}
         />
