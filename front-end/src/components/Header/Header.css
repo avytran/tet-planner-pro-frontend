@@ -46,7 +46,8 @@
   transition: 0.2s;
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.active-link {
   background-color: var(--color-danger);
   color: white;
   border-radius: 30px;

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
 import avatarImg from "@/assets/images/avatar.png";
 
@@ -21,9 +21,15 @@ const Header = () => {
 
           <nav className="nav-desktop">
             {navItems.map((item) => (
-              <Link key={item.name} to={item.href} className="nav-item">
+              <NavLink
+                key={item.name}
+                to={item.href}
+                className={({ isActive }) =>
+                  isActive ? "active-link nav-item" : "nav-item"
+                }
+              >
                 {item.name}
-              </Link>
+              </NavLink>
             ))}
           </nav>
         </div>

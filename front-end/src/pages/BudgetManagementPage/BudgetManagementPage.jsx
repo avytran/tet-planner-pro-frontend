@@ -8,7 +8,11 @@ import { Gauge, gaugeClasses } from "@mui/x-charts/Gauge";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 import { Typography } from "@mui/material";
-import { PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowRightIcon,
+  PencilIcon,
+  PlusIcon,
+} from "@heroicons/react/24/outline";
 import { LineChart } from "@mui/x-charts/LineChart";
 import CommonButton from "../../components/Button/CommonButton.jsx";
 import EditTotalBudgetModal from "@/components/BudgetModal/EditTotalBudgetModal.jsx";
@@ -20,82 +24,17 @@ import {
   useShoppingItemsByTimeline,
   useTopCostShoppingItems,
 } from "@/hooks/useShoppingItems.js";
-
-const STATUS_CONFIG = {
-  safe: {
-    basedColor: "success",
-    fadedColor: "color-mix(in srgb, var(--color-success), transparent 70%)",
-    messageTitle: "Great! Everything is safe",
-    messageDescription:
-      "Your Tết budget is looking great! 🎉 You’re spending smart and staying on track.",
-  },
-
-  caution: {
-    basedColor: "accent",
-    fadedColor: "color-mix(in srgb, var(--color-festive), transparent 70%)",
-    messageTitle: "Be careful! Your budget is below safe level",
-    messageDescription:
-      "It’s important to keep an eye on your spending and make adjustments to stay within your limits.",
-  },
-
-  warning: {
-    basedColor: "danger",
-    fadedColor: "color-mix(in srgb, var(--color-danger), transparent 70%)",
-    messageTitle: "Warning! You’re close to your budget limit",
-    messageDescription:
-      "You’re getting close to your budget limit 👀 A little planning now will keep your Tết stress-free.",
-  },
-
-  default: {
-    basedColor: "accent-soft",
-    fadedColor: "color-mix(in srgb, var(--color-accent-soft), transparent 70%)",
-    messageTitle: "Plan your budget for a joyful Tết",
-    messageDescription:
-      "Set a budget that lets you enjoy the festivities without worrying about overspending. A little planning goes a long way!",
-  },
-};
-
-const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
-
-const chartColors = [
-  "var(--color-primary-strong)",
-  "var(--color-primary)",
-  "var(--color-danger)",
-  "var(--color-accent)",
-  "var(--color-accent-soft)",
-  "var(--color-highlight)",
-  "var(--color-festive)",
-];
-
-const lineChartData = [
-  {
-    curve: "linear",
-    color: "var(--color-success)",
-    data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5],
-    label: "Food",
-  },
-  {
-    curve: "linear",
-    color: "var(--color-danger)",
-    data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3],
-    label: "Decoration",
-  },
-  {
-    curve: "linear",
-    color: "var(--color-accent)",
-    data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4],
-    label: "Cloths",
-  },
-  {
-    curve: "linear",
-    color: "var(--color-highlight)",
-    data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4],
-    label: "Others",
-  },
-];
+import {
+  BUDGET_CHART_COLORS,
+  LINE_CHART_DATA,
+  STATUS_CONFIG,
+} from "@/constants/budgetConstant.js";
+import { useNavigate } from "react-router-dom";
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+
   const {
     totalBudget,
     totalSpending,
@@ -146,7 +85,7 @@ export default function BudgetManagementPage() {
       value: parseFloat(
         ((item.allocatedAmount / totalBudget) * 100).toFixed(2),
       ),
-      color: chartColors[index % chartColors.length],
+      color: BUDGET_CHART_COLORS[index % BUDGET_CHART_COLORS.length],
       label: item.name,
     }));
 
@@ -162,7 +101,7 @@ export default function BudgetManagementPage() {
     };
 
     return otherItem.value > 0 ? [...renderedData, otherItem] : renderedData;
-  }, [budgets, totalBudget, chartColors]);
+  }, [budgets, totalBudget, BUDGET_CHART_COLORS]);
 
   if (budgetLoading || shoppingItemsLoading || topShoppingItemsLoading)
     return (
@@ -331,7 +270,7 @@ export default function BudgetManagementPage() {
           </p>
           <div className="w-full h-125  ">
             <LineChart
-              series={lineChartData}
+              series={LINE_CHART_DATA}
               slotProps={{
                 legend: {
                   direction: "horizontal",
@@ -464,6 +403,11 @@ export default function BudgetManagementPage() {
               budget.
             </div>
           )}
+          <CommonButton
+            label={"Shopping List"}
+            trailingIcon={<ArrowRightIcon className="h-5 w-5" />}
+            onClick={() => navigate("/shopping-list")}
+          />
         </div>
       </>
       <>
