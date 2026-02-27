@@ -7,14 +7,16 @@ import { parseProfileFromGetProfile } from "@/schemas/profile.schema";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CommonButton from "@/components/Button/CommonButton";
-
+import { useTheme } from "@/hooks/useTheme";
+import Divider from "@mui/material/Divider";
 function formatNumberVi(value) {
   const n = typeof value === "number" ? value : Number(value);
   if (Number.isNaN(n)) return "0";
-  return n.toLocaleString("vi-VN");
+  return n.toLocaleString("en-US");
 }
 
 export default function ProfilePage() {
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const { user, loading, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -36,27 +38,50 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-page">
-      <h1 className="text-primary font-semibold text-5xl">My Profile</h1>
+      <div className="flex-1  flex flex-col justify-center items-center">
+        <h1 className="text-primary font-semibold text-5xl">My Profile</h1>
 
-      <div className="profile-card px-6 py-15 mt-5">
-        <div className="profile-avatar mb-4">
-          <img src={avatarImg} alt="Avatar" />
+        <div className="profile-card px-6 py-15 mt-5">
+          <div className="profile-avatar mb-4">
+            <img src={avatarImg} alt="Avatar" />
+          </div>
+
+          <div className="text-body text-primary font-bold text-2xl">
+            {profile?.fullName ?? "—"}
+          </div>
+          <div className="text-primary">{profile?.email ?? "—"}</div>
+
+          <div className="text-2xl text-primary font-semibold mt-1 ">
+            Total Budget:
+            <span className="ml-2 text-primary">
+              {budgetLoading ? "…" : `${formatNumberVi(totalBudget)} VND`}
+            </span>
+          </div>
         </div>
-
-        <div className="text-body text-black font-bold text-xl">{profile?.fullName ?? "—"}</div>
-        <div className="text-black">{profile?.email ?? "—"}</div>
-
-        <div className="text-2xl text-primary font-semibold mt-1 ">Total Budget: 
-          <span className="text-black"> {budgetLoading ? "…" : formatNumberVi(totalBudget)}</span></div>
       </div>
-
-      <CommonButton
-        onClick={handleLogout}
-        disabled={isLoggingOut}
-        label={isLoggingOut ? "Logging out..." : "Log out"}
-        color="danger"
-      />
+      <div className="flex-1">
+        <div className="flex py-5 gap-5 items-center">
+          <p className="font-bold text-primary text-2xl">Theme</p>
+          <button
+            className={`py-4  px-6 border border-pink-500 rounded-4xl hover:bg-pink-500 hover:text-white cursor-pointer ${theme === "blossom" ? "bg-pink-500 text-white" : "text-pink-500"}`}
+            onClick={toggleTheme}
+          >
+            Blossom 🌸
+          </button>
+          <button
+            className={`py-4  px-6 border border-yellow-500 rounded-4xl hover:bg-yellow-500 hover:text-white cursor-pointer ${theme === "apricot" ? "bg-yellow-500 text-white" : "text-yellow-500"}`}
+            onClick={toggleTheme}
+          >
+            Apricot 🏵️
+          </button>
+        </div>
+        <CommonButton
+          onClick={handleLogout}
+          disabled={isLoggingOut}
+          label={isLoggingOut ? "Logging out..." : "Log out"}
+          color="danger"
+        />
+      </div>
     </div>
   );
 }
-

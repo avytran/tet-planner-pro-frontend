@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useShoppingItems.js";
 import {
   BUDGET_CHART_COLORS,
+  BUDGET_COLORS,
   LINE_CHART_DATA,
   STATUS_CONFIG,
 } from "@/constants/budgetConstant.js";
@@ -249,7 +250,7 @@ export default function BudgetManagementPage() {
                         name={item.name}
                         price={item.price}
                         quantity={item.quantity}
-                        bgColor={colors[index]}
+                        bgColor={BUDGET_COLORS[index]}
                         textColor={"text-white"}
                       />
                     ))}
