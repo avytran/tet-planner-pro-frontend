@@ -8,16 +8,18 @@ export default function CommonButton({
   onClick,
   type = "button",
   className = "",
+  disable,
 }) {
   const colorClasses = {
     accent: "bg-accent hover:bg-accent-soft text-white",
     success: "bg-success-strong hover:bg-success text-white",
-    danger: "bg-primary  hover:bg-danger text-white",
+    danger: "bg-danger hover:bg-festive text-white",
     secondary: "bg-white text-primary border ",
   };
 
   return (
     <button
+      disabled={disable}
       type={type}
       className={`w-fit min-w-20 font-normal  rounded-3xl flex py-3 px-5 justify-center gap-2 items-center cursor-pointer transition duration-300 ${colorClasses[color]}  ${className}`}
       onClick={onClick}

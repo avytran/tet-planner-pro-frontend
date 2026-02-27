@@ -26,6 +26,7 @@ import {
 } from "@/hooks/useShoppingItems.js";
 import {
   BUDGET_CHART_COLORS,
+  BUDGET_COLORS,
   LINE_CHART_DATA,
   STATUS_CONFIG,
 } from "@/constants/budgetConstant.js";
@@ -103,15 +104,6 @@ export default function BudgetManagementPage() {
     return otherItem.value > 0 ? [...renderedData, otherItem] : renderedData;
   }, [budgets, totalBudget, BUDGET_CHART_COLORS]);
 
-  if (budgetLoading || shoppingItemsLoading || topShoppingItemsLoading)
-    return (
-      <div className=" flex justify-center items-center p-20">
-        <Box sx={{ display: "flex" }}>
-          <CircularProgress />
-        </Box>
-      </div>
-    );
-
   if (
     (budgetError && budgetError.message !== "Budget not found") ||
     shoppingItemsError ||
@@ -125,6 +117,14 @@ export default function BudgetManagementPage() {
 
   return (
     <div>
+      {budgetLoading || shoppingItemsLoading || topShoppingItemsLoading ? (
+        <div className=" flex justify-center items-center p-20 absolute h-full w-full">
+          <Box sx={{ display: "flex" }}>
+            <CircularProgress />
+          </Box>
+        </div>
+      ) : null}
+
       <>
         <div className="bg-bg px-4 py-12 md:p-20">
           <div className="  flex w-full gap-6 flex-wrap justify-center">
@@ -249,7 +249,7 @@ export default function BudgetManagementPage() {
                         name={item.name}
                         price={item.price}
                         quantity={item.quantity}
-                        bgColor={colors[index]}
+                        bgColor={BUDGET_COLORS[index]}
                         textColor={"text-white"}
                       />
                     ))}
@@ -426,7 +426,6 @@ export default function BudgetManagementPage() {
           </p>
         </div>
       </>
-
       {showTotalDialog && (
         <EditTotalBudgetModal onClose={() => setShowTotalDialog(false)} />
       )}
