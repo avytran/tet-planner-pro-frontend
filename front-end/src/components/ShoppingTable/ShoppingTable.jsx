@@ -1,38 +1,76 @@
-import React, { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useMutation } from '@apollo/client/react';
+import { DELETE_SHOPPING_ITEM } from '@/graphql/mutations/shoppingItem.mutation';
 
-export const ShoppingTable = ({ items = [], onRowClick }) => {
+import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
+
+import { ConfirmModel } from '../Task/ConfirmModel';
+import { ShoppingItemDialog } from '../ShoppingItemDialog';
+
+import { getStatusBadgeStyle } from '@/utils/getItemStatusBadgeStyle';
+import { formatDate } from '@/utils/formatDate';
+
+export const ShoppingTable = ({ mode = "display", items = [] }) => {
+    const { user } = useAuth();
     const [currentPage, setCurrentPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
-    
-    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-    const paginatedItems = items.slice(
-        (currentPage - 1) * ITEMS_PER_PAGE,
-        currentPage * ITEMS_PER_PAGE
-    );
-    
-    const formatDate = (dateString) => {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
+    const [openConfirm, setOpenConfirm] = useState(false);
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+    const [seletedItem, setSeletedItem] = useState(null);
+
+    const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM);
+
+    const handleClickDeleteButton = (id) => {
+        setSeletedItem(id);
+        setOpenConfirm(true);
+    }
+
+    const handleDeleteItem = async () => {
+        await deleteShoppingItem({
+            variables: {
+                userId: user.id,
+                itemId: seletedItem
+            }
         });
+
+        setSeletedItem(null);
+        setOpenConfirm(false);
     };
-    
-    const getStatusBadgeStyle = (status) => {
-        switch (status) {
-            case 'Completed':
-                return 'bg-success text-white';
-            case 'Planning':
-                return 'bg-accent text-white';
-            default:
-                return 'bg-text-muted/20 text-text-muted';
+
+    const handleClickEditButton = (id) => {
+        setSeletedItem(id);
+        setOpenEditDialog(true);
+    }
+
+    const editedItem = useMemo(() => {
+        for (const item of items) {
+            if (item.id === seletedItem) {
+                return item;
+            }
         }
-    };
-    
-    return ( 
+    }, [seletedItem])
+
+    return (
         <div className="flex-1 w-full">
+            {
+                openEditDialog && (
+                    <ShoppingItemDialog
+                        onClose={() => { setOpenEditDialog(false) }}
+                        item={editedItem}
+                    />
+                )
+            }
+            {
+                openConfirm && (
+                    <ConfirmModel
+                        setOpenConfirm={setOpenConfirm}
+                        title="Delete Shopping Item"
+                        msg="Are you sure you want to delete this item?"
+                        mutationName="Delete"
+                        handleMutation={handleDeleteItem}
+                    />
+                )
+            }
             {/* Table */}
             <div className="bg-surface rounded-xl overflow-hidden border border-gray-200 shadow-md">
                 <div className="overflow-x-auto">
@@ -48,33 +86,61 @@ export const ShoppingTable = ({ items = [], onRowClick }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {paginatedItems.length > 0 ? (
-                                paginatedItems.map((item, index) => ( 
-                                    <tr 
-                                        key={item.id} 
-                                        className={`border-b border-festive/20 hover:bg-festive/10 transition-colors h-[48px] ${onRowClick ? "hover:bg-orange-50 cursor-pointer transition" : ""} ${index % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
-                                        onClick={() => onRowClick && onRowClick(index)}
-                                    > 
+                            {items.length > 0 ? (
+                                items.map((item, index) => (
+                                    <tr
+                                        key={item.id}
+                                        className={`border-b border-festive/20 hover:bg-festive/10 transition-colors h-[48px] ${index % 2 === 0 ? 'bg-surface' : 'bg-highlight/30'}`}
+                                    >
                                         <td className="px-4">
                                             <span className="text-sm text-black font-sans font-light">{item.name}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans font-light">{formatDate(item.dued_time)}</span>
+                                            <span className="text-sm text-black font-sans font-light">{formatDate(item.duedTime)}</span>
                                         </td>
                                         <td className="px-4">
                                             <span className="text-sm text-black font-sans font-light">{item.price?.toLocaleString('en-US')}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className="text-sm text-black font-sans font-light">{item.category}</span>
+                                            <span className="text-sm text-black font-sans font-light">{item.budget.name}</span>
                                         </td>
                                         <td className="px-4 text-center">
                                             <span className="text-sm text-black font-sans font-light">{item.quantity}</span>
                                         </td>
                                         <td className="px-4">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-sans ${getStatusBadgeStyle(item.status)}`}>
-                                                {item.status}
-                                            </span>
+                                            <div className="flex items-center justify-between">
+                                                {/* Status */}
+                                                <span
+                                                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium font-sans ${getStatusBadgeStyle(item.status)}`}
+                                                >
+                                                    {item.status}
+                                                </span>
+
+                                                {/* Buttons */}
+                                                {
+                                                    mode === "display" && (
+                                                        <div className="flex items-center gap-2">
+                                                            <button
+                                                                type="button"
+                                                                className="inline-flex items-center justify-center rounded-lg border border-primary/20 px-2.5 py-1.5 text-primary hover:bg-primary/5 cursor-pointer"
+                                                                onClick={() => { handleClickEditButton(item.id) }}
+                                                            >
+                                                                <PencilSquareIcon className="h-4 w-4" />
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="inline-flex items-center justify-center rounded-lg border border-primary/20 px-2.5 py-1.5 text-primary hover:bg-primary/5 cursor-pointer"
+                                                                onClick={() => handleClickDeleteButton(item.id)}
+                                                            >
+                                                                <TrashIcon className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    )
+                                                }
+                                            </div>
                                         </td>
+
                                     </tr>
                                 ))
                             ) : (
@@ -88,9 +154,9 @@ export const ShoppingTable = ({ items = [], onRowClick }) => {
                     </table>
                 </div>
             </div>
-            
+
             {/* Pagination */}
-            {totalPages > 1 && (
+            {/* {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                     <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
@@ -108,7 +174,7 @@ export const ShoppingTable = ({ items = [], onRowClick }) => {
                         &gt;
                     </button>
                 </div>
-            )}
+            )} */}
         </div>
     );
 };

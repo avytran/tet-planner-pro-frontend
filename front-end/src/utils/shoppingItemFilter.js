@@ -3,7 +3,7 @@ export function filterShoppingItems(items, filters) {
 
     return items.filter(item => {
         const priceOk = item.price >= min && item.price <= max;
-        const categoryOk = !filters.categories?.length || filters.categories.includes(item.category);
+        const categoryOk = !filters.categories?.length || filters.categories.includes(item.budget.id);
         const statusOk = !filters.status?.length || filters.status.includes(item.status);
         const timelineOk = !filters.timeline?.length || filters.timeline.includes(item.timeline);
 

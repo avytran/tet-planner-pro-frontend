@@ -1,180 +1,142 @@
-import React, { useState, useRef, useEffect } from "react";
+import { useMemo } from "react";
+
+import { useForm, FormProvider, useWatch } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { createShoppingItemSchema } from "@/schemas/shoppingItem.schema";
 
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import CommonButton from "../Button/CommonButton";
 import { ShoppingTable } from "../ShoppingTable";
 import ShoppingItemForm from "./ShoppingItemForm";
 import { getTetTimelineAuto } from "../../utils/getTetTimelineAuto";
 import ShoppingItemMessages from "./ShoppingItemMessages";
+import { useQuery } from "@apollo/client/react";
+import { GET_SHOPPING_ITEMS_OF_TASK } from "@/graphql/queries/shopping.query";
+import { useAuth } from "@/hooks/useAuth";
+import { GET_BUDGETS_BY_ID } from "@/graphql/queries/budget.query";
+import { formatDate } from "@/utils/formatDate";
 
-const statusOptions = ["Planning", "Completed"];
-
-export default function ShoppingItemDialog({
-    open = true,
+export const ShoppingItemDialog = ({
     onClose,
-    mode = "add", // 'add' | 'edit'
-    initialData = null,
-    onSave,
-    recentlyAddedItems = [],
-    totalShoppingCost = 0,
-    remainingBudget = 0,
-    maxBudget = 0,
-    taskList = [],
-    budgetCategories = [],
-}) {
-    const [sessionAddedItems, setSessionAddedItems] = useState([]);
+    item = {}
+}) => {
+    const { user } = useAuth();
 
-    const newItemsCount = sessionAddedItems.length;
-    const addedAmount = sessionAddedItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
-
-    const initialFormState = {
-        task: initialData?.task || "",
-        taskId: initialData?.taskId || "",
-        itemName: initialData?.itemName || "",
-        budgetCategory: initialData?.budgetCategory || "",
-        budgetCategoryName: initialData?.budgetCategoryName || "",
-        estimatedPrice: initialData?.estimatedPrice || "",
-        quantity: initialData?.quantity || 1,
-        duedDate: initialData?.duedDate || "",
-        status: initialData?.status || "",
-        id: initialData?.id || undefined,
-        timeline: initialData?.duedDate ? getTetTimelineAuto(initialData.duedDate) : "",
-    };
-    const [formData, setFormData] = useState(initialFormState);
-
-    useEffect(() => {
-        if (open) {
-            setFormData({
-                ...initialFormState,
-                timeline: initialData?.duedDate ? getTetTimelineAuto(initialData.duedDate) : "",
-            });
-            setSessionAddedItems([]);
+    const methods = useForm({
+        resolver: yupResolver(createShoppingItemSchema),
+        defaultValues: {
+            taskId: item?.task?.id || "",
+            name: item?.name || "",
+            budgetId: item?.budget?.id || "",
+            price: item?.price || 0,
+            quantity: item?.quantity || 1,
+            duedTime: formatDate(item?.duedTime || new Date()),
+            status: item?.status || "Planning"
         }
-    }, [open]);
+    });
 
-    const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
-    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-    const [showTaskDropdown, setShowTaskDropdown] = useState(false);
-    const taskDropdownRef = useRef(null);
+    const { control } = methods;
 
-    useEffect(() => {
-        if (!showTaskDropdown) return;
-        function handleClickOutside(e) {
-            if (taskDropdownRef.current && !taskDropdownRef.current.contains(e.target)) {
-                setShowTaskDropdown(false);
+    const [price, quantity, status, budgetId, taskId] = useWatch({
+        control,
+        name: ["price", "quantity", "status", "budgetId", "taskId"],
+    });
+
+    const { data: shoppingItemsData } = useQuery(GET_SHOPPING_ITEMS_OF_TASK, {
+        variables: {
+            userId: user.id,
+            params: {
+                taskId: taskId,
             }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [showTaskDropdown]);
+        },
+        skip: !taskId
+    });
 
-    if (!open) return null;
+    const { data: budgetData } = useQuery(GET_BUDGETS_BY_ID, {
+        variables: {
+            userId: user.id,
+            budgetId: budgetId,
+        },
+        skip: !budgetId
+    })
+
+    const shoppingItemsOfTask = shoppingItemsData?.getShoppingItemsOfUser?.items || [];
+    const { allocatedAmount, summary } = budgetData?.getBudgetByIdOfUser ?? 0;
+
+    const totalShoppingCost = useMemo(() => {
+        return (price * quantity + summary) || 0;
+    }, [price, quantity, summary]);
+
+    const remainingBudget = useMemo(() => {
+        return (allocatedAmount - totalShoppingCost) || 0;
+    }, [budgetId, totalShoppingCost]);
 
     return (
-        <div
-            className="fixed inset-0 flex items-center justify-center bg-black/50"
-            style={{ zIndex: 1100 }}
-            onClick={onClose}
-        >
+        <FormProvider {...methods}>
             <div
-                className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 relative"
-                onClick={e => e.stopPropagation()}
+                className="fixed inset-0 flex items-center justify-center bg-black/50"
+                style={{ zIndex: 1100 }}
+                onClick={onClose}
             >
-                {/* Close button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition z-10 cursor-pointer"
+                <div
+                    className="bg-white rounded-3xl w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 relative"
+                    onClick={e => e.stopPropagation()}
                 >
-                    <XMarkIcon className="w-6 h-6 text-gray-500" />
-                </button>
+                    {/* Close button */}
+                    <button
+                        onClick={onClose}
+                        className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition z-10 cursor-pointer"
+                    >
+                        <XMarkIcon className="w-6 h-6 text-gray-500" />
+                    </button>
 
-                <div className="p-8">
-                    {/* Header */}
-                    <div className="mb-6">
-                        <h2 className="text-2xl font-medium text-black">
-                            {mode === "add" ? "Shopping Item" : "Edit Shopping Item"}
-                        </h2>
-                        <p className="text-black/50 text-sm">
-                            Tet is more fun when your budget stays happy too
-                        </p>
-                    </div>
+                    <div className="p-8">
+                        {/* Header */}
+                        <div className="mb-6">
+                            <h2 className="text-2xl font-medium text-black">
+                                {!!item.id ? "Edit Shopping Item" : "Shopping Item"}
+                            </h2>
+                            <p className="text-black/50 text-sm">
+                                Tet is more fun when your budget stays happy too
+                            </p>
+                        </div>
 
-                    {/* Form section */}
-                    <ShoppingItemForm
-                        formData={formData}
-                        setFormData={setFormData}
-                        showCategoryDropdown={showCategoryDropdown}
-                        setShowCategoryDropdown={setShowCategoryDropdown}
-                        showStatusDropdown={showStatusDropdown}
-                        setShowStatusDropdown={setShowStatusDropdown}
-                        showTaskDropdown={showTaskDropdown}
-                        setShowTaskDropdown={setShowTaskDropdown}
-                        taskDropdownRef={taskDropdownRef}
-                        taskOptions={taskList}
-                        budgetCategories={budgetCategories}
-                        statusOptions={statusOptions}
-                    />
-                    
-                    {/* Save button */}
-                    <div className="pt-4 flex justify-center">
-                        <CommonButton
-                            label="Save change"
-                            color="success"
-                            onClick={async () => {
-                                if (
-                                    !formData.taskId || !formData.itemName || !formData.budgetCategory || !formData.quantity
-                                    || !formData.estimatedPrice || !formData.duedDate || !formData.status
-                                ) {
-                                    alert("Please fill in all required fields!");
-                                    return;
-                                }
-                                if (onSave) {
-                                    const isSuccess = await onSave(formData);
-                                    console.log("Save status:", isSuccess)
-                                        
-                                    if (isSuccess && mode === "add") {
-                                        const newItem = {
-                                            id: Date.now().toString(),
-                                            name: formData.itemName,
-                                            dued_time: formData.duedDate,
-                                            price: Number(formData.estimatedPrice),
-                                            category: formData.budgetCategoryName,
-                                            quantity: Number(formData.quantity),
-                                            status: formData.status,
-                                        };
-                                        setSessionAddedItems(prev => [newItem, ...prev]);
-                                        setFormData(initialFormState);
-                                    }
-                                }
-                            }}
+                        {/* Form section */}
+                        <ShoppingItemForm 
+                            itemId={item.id}
+                            onClose={onClose}
                         />
-                    </div>
 
-                    {/* Recently added section - Only show in add mode */}
-                    {mode === "add" && sessionAddedItems.length > 0 && (
-                        <div className="mt-8 flex gap-6 items-start">
-                            {/* Left: Table */}
+                        {/* Preview added section */}
+                        <div className="mt-6 flex items-start gap-8">
+                            {/* Left */}
                             <div className="flex-1">
-                                <h3 className="text-xl font-semibold text-primary mb-2">
-                                    Recently added shopping items
+                                <h3 className="text-lg font-semibold text-primary mb-3">
+                                    Shopping Items of Task
                                 </h3>
-
-                                <ShoppingTable items={sessionAddedItems} />
+                                <ShoppingTable 
+                                    mode="mutate"
+                                    items={shoppingItemsOfTask} 
+                                />
                             </div>
 
-                            {/* Right: Messages */}
-                            <ShoppingItemMessages
-                                formData={sessionAddedItems[0]}
-                                totalShoppingCost={totalShoppingCost}
-                                remainingBudget={remainingBudget}
-                                maxBudget={maxBudget}
-                                newItemsCount={newItemsCount}
-                                addedAmount={addedAmount}
-                            />
+                            {/* Right */}
+                            <div className="min-w-[300px]">
+                                <h3 className="text-lg font-semibold text-primary mb-3">
+                                    Budget Preview
+                                </h3>
+                                <ShoppingItemMessages
+                                    status={status}
+                                    totalShoppingCost={totalShoppingCost}
+                                    remainingBudget={remainingBudget}
+                                    maxBudget={allocatedAmount || 0}
+                                    isMsgDisplay={!!budgetId}
+                                />
+                            </div>
                         </div>
-                    )}
+
+                    </div>
                 </div>
             </div>
-        </div>
+        </FormProvider>
     );
 }

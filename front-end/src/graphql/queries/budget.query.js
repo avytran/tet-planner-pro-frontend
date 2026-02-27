@@ -18,3 +18,14 @@ export const GET_BUDGETS = gql`
     }
   }
 `;
+
+export const GET_BUDGETS_BY_ID = gql`
+  query GetBudgetByIdOfUser($budgetId: String!, $userId: String!) {
+    getBudgetByIdOfUser(id: $budgetId, userId: $userId) {
+      id
+      name
+      allocatedAmount
+      summary
+    }
+  }
+`;

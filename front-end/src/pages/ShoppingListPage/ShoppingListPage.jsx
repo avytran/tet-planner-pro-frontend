@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { ShoppingFilter } from '../../components/ShoppingFilter/ShoppingFilter';
 import { ShoppingTable } from '../../components/ShoppingTable/ShoppingTable';
 import RowActionDialog from '../../components/ShoppingTable/RowActionDialog';
@@ -9,7 +9,7 @@ import { filterShoppingItems } from '../../utils/shoppingItemFilter';
 import { useShoppingItemHandlers } from '../../hooks/useShoppingItemHandlers';
 import { AuthContext } from '../../context/AuthContext';
 import ProgressWidget from '../../components/ShoppingListWidgets/ProgressWidget';
-import ShoppingItemDialog from '../../components/ShoppingItemDialog/ShoppingItemDialog';
+import { ShoppingItemDialog } from '@/components/ShoppingItemDialog';
 
 import { useQuery, useMutation } from '@apollo/client/react';
 import { GET_SHOPPING_LIST_DATA } from '../../graphql/queries/shopping.query';
@@ -25,7 +25,7 @@ export default function ShoppingListPage() {
     const { user } = useContext(AuthContext);
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [rowActionDialog, setRowActionDialog] = useState({ open: false, rowIdx: null });
-    const [editDialog, setEditDialog] = useState({ open: false, data: null });
+    const [editDialog, setEditDialog] = useState({ open: true, data: null });
     const [updateShoppingItem] = useMutation(UPDATE_SHOPPING_ITEM);
     const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM);
     const [createShoppingItem] = useMutation(CREATE_SHOPPING_ITEM);
@@ -39,7 +39,7 @@ export default function ShoppingListPage() {
         };
         return params;
     };
-    
+
     const userId = user?.id || "";
     const { data, previousData, loading, error, refetch } = useQuery(GET_SHOPPING_LIST_DATA, {
         variables: {
@@ -51,13 +51,11 @@ export default function ShoppingListPage() {
     const currentData = data || previousData;
 
     const rawItems = (currentData?.getShoppingItemsOfUser?.items || []).map(item => ({
-        ...item,
-        dued_time: item.duedTime,
-        category: item.budget?.name || '',
+        ...item
     }));
     const maxPrice = rawItems.length > 0 ? Math.max(...rawItems.map(i => i.price || 0)) : 5000000;
 
-    React.useEffect(() => {
+    useEffect(() => {
         setFilters(f => {
             let [min, max] = f.priceRange;
             if (max > maxPrice) max = maxPrice;
@@ -82,7 +80,7 @@ export default function ShoppingListPage() {
 
     let shoppingItems = filterShoppingItems(rawItems, filters);
     if (searchValue) {
-        shoppingItems = shoppingItems.filter(item => 
+        shoppingItems = shoppingItems.filter(item =>
             item.name && item.name.toLowerCase().includes(searchValue.toLowerCase())
         );
     }
@@ -97,24 +95,6 @@ export default function ShoppingListPage() {
             spent,
             total: budget.allocatedAmount,
         };
-    });
-
-    // HOOKS
-    const {
-        handleEditSave,
-        handleDelete,
-        handleAddSave
-    } = useShoppingItemHandlers({
-        updateShoppingItem,
-        deleteShoppingItem,
-        createShoppingItem,
-        refetch,
-        setEditDialog,
-        setOpenAddDialog,
-        setRowActionDialog,
-        shoppingItems,
-        rowActionDialog,
-        userId
     });
 
     useEffect(() => {
@@ -132,7 +112,7 @@ export default function ShoppingListPage() {
             <div className="container mx-auto flex items-center justify-between pb-8">
                 <p className="text-5xl font-semibold text-primary">Shopping List</p>
                 <div className="flex gap-4">
-                    <CommonButton 
+                    <CommonButton
                         label={
                             <span className="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -144,15 +124,15 @@ export default function ShoppingListPage() {
                         color="accent"
                         onClick={() => setOpenAddDialog(true)}
                     />
-                    <CommonButton 
-                        label="Clear All" 
-                        color="danger" 
+                    <CommonButton
+                        label="Clear All"
+                        color="danger"
                         onClick={async () => {
                             if (window.confirm("Are you sure you want to clear all shopping items?")) {
                                 for (const item of shoppingItems) {
                                     try {
                                         await deleteShoppingItem({ variables: { userId, itemId: item.id } });
-                                    } catch (e) {}
+                                    } catch (e) { }
                                 }
                                 await refetch();
                                 setFilters(f => ({ ...f, priceRange: [0, 5000000] }));
@@ -225,48 +205,6 @@ export default function ShoppingListPage() {
                                 <div className="min-w-full">
                                     <ShoppingTable
                                         items={shoppingItems}
-                                        onRowClick={idx => setRowActionDialog({ open: true, rowIdx: idx })}
-                                    />
-                                    <RowActionDialog
-                                        open={rowActionDialog.open}
-                                        onClose={() => setRowActionDialog({ open: false, rowIdx: null })}
-                                        onEdit={() => {
-                                            const item = shoppingItems[rowActionDialog.rowIdx];
-                                            setEditDialog({ open: true, data: {
-                                                task: item.task?.title || '',
-                                                taskId: item.task?.id || '',
-                                                itemName: item.name,
-                                                budgetCategory: item.budget?.id || '',
-                                                budgetCategoryName: item.budget?.name || '',
-                                                estimatedPrice: item.price,
-                                                quantity: item.quantity,
-                                                duedDate: item.duedTime ? item.duedTime.slice(0,10) : '',
-                                                status: item.status,
-                                                id: item.id,
-                                            }});
-                                            setRowActionDialog({ open: false, rowIdx: null });
-                                        }}
-                                        onDelete={handleDelete}
-                                    />
-                                    <ShoppingItemDialog
-                                        open={editDialog.open}
-                                        onClose={() => setEditDialog({ open: false, data: null })}
-                                        mode="edit"
-                                        initialData={editDialog.data}
-                                        onSave={handleEditSave}
-                                        recentlyAddedItems={rawItems.slice(-5).reverse()}
-                                        totalShoppingCost={totalShoppingCostRaw}
-                                        remainingBudget={totalBudget - totalShoppingCostRaw}
-                                        maxBudget={totalBudget}
-                                        taskList={tasks
-                                            .map(t => ({
-                                                id: t.id,
-                                                title: typeof t.title === 'string' ? t.title : '',
-                                                category: typeof t.category === 'string' ? t.category : ''
-                                            }))
-                                            .filter(t => t.title)
-                                        }
-                                        budgetCategories={budgetCategoryObjects}
                                     />
                                 </div>
                             </div>
@@ -296,7 +234,7 @@ export default function ShoppingListPage() {
                             <div className="w-full">
                                 <div className="w-full">
                                     <ShoppingItemMessages
-                                        formData={{status: "Completed"}}
+                                        formData={{ status: "Completed" }}
                                         totalShoppingCost={totalShoppingCostRaw}
                                         remainingBudget={totalBudget - totalShoppingCostRaw}
                                         maxBudget={totalBudget}
@@ -308,7 +246,7 @@ export default function ShoppingListPage() {
 
                             {/* Total category cost widgets */}
                             <div className="mb-1 mt-2">
-                                <span className="text-xl font-semibold text-black" style={{fontFamily: 'var(--font-sans)'}}>Total category cost</span>
+                                <span className="text-xl font-semibold text-black" style={{ fontFamily: 'var(--font-sans)' }}>Total category cost</span>
                             </div>
                             {totalCategoryCostRaw.map((cat, idx) => (
                                 <CategoryCostWidget
@@ -317,37 +255,25 @@ export default function ShoppingListPage() {
                                     percent={cat.total > 0 ? Math.min(100, Math.round((cat.spent / cat.total) * 100)) : 0}
                                     spent={cat.spent}
                                     total={cat.total}
-                                    color = "var(--color-primary)"
-                                    bg = "var(--color-surface)"
-                                    barColor = "var(--color-success)"
-                                    barBg = "#E5E7EB"
-                                    currency = "VND"
+                                    color="var(--color-primary)"
+                                    bg="var(--color-surface)"
+                                    barColor="var(--color-success)"
+                                    barBg="#E5E7EB"
+                                    currency="VND"
                                 />
                             ))}
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <ShoppingItemDialog
-                open={openAddDialog}
-                onClose={() => setOpenAddDialog(false)}
-                onSave={handleAddSave}
-                mode="add"
-                recentlyAddedItems={rawItems.slice(-5).reverse()}
-                totalShoppingCost={totalShoppingCostRaw}
-                remainingBudget={totalBudget - totalShoppingCostRaw}
-                maxBudget={totalBudget}
-                taskList={tasks
-                    .map(t => ({
-                        id: t.id,
-                        title: typeof t.title === 'string' ? t.title : '',
-                        category: typeof t.category === 'string' ? t.category : ''
-                    }))
-                    .filter(t => t.title)
-                }
-                budgetCategories={budgetCategoryObjects}
-            />
+
+            {
+                openAddDialog && (
+                    <ShoppingItemDialog
+                        onClose={() => setOpenAddDialog(false)}
+                    />
+                )
+            }
         </div>
     );
 }

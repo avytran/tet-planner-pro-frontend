@@ -1,248 +1,234 @@
-import React from "react";
+import { useAuth } from "@/hooks/useAuth";
+
+import { useQuery, useMutation } from "@apollo/client/react";
+import { GET_SHOPPING_FORM_DATA } from "@/graphql/queries/shopping.query";
+import { CREATE_SHOPPING_ITEM, UPDATE_SHOPPING_ITEM } from "@/graphql/mutations/shopping.mutation";
+
+import { useFormContext } from "react-hook-form";
+
 import { getTetTimelineAuto } from "../../utils/getTetTimelineAuto";
+import { formatNumberWithCommas } from "@/utils/formatNumberWithCommas";
 
-function formatNumberWithCommas(value) {
-    if (!value) return "";
-    const number = value.toString().replace(/\D/g, "");
-    return number.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+import { SHOPPING_ITEM_STATUS, TIMELINE_MAPPING } from "@/constants/shoppingConstant";
 
-export default function ShoppingItemForm({ formData, setFormData, showCategoryDropdown, setShowCategoryDropdown, showStatusDropdown, setShowStatusDropdown,
-                                           showTaskDropdown, setShowTaskDropdown, taskDropdownRef, taskOptions, budgetCategories, statusOptions }) {
-    React.useEffect(() => {
-        if (formData.duedDate) {
-            const timeline = getTetTimelineAuto(formData.duedDate);
-            if (timeline !== formData.timeline) {
-                setFormData(f => ({ ...f, timeline }));
-            }
+import { ChevronDownIcon } from "@heroicons/react/24/outline";
+
+import CommonButton from "../Button/CommonButton";
+
+export default function ShoppingItemForm({ onClose, itemId }) {
+    const { user } = useAuth();
+
+    const { data: formFieldsData } = useQuery(GET_SHOPPING_FORM_DATA, {
+        variables: {
+            userId: user.id
         }
-    }, [formData.duedDate]);
+    });
+
+    const budgetCategories = formFieldsData?.getBudgetsOfUser;
+    const tasks = formFieldsData?.getTasksOfUser?.tasks;
+
+    const [mutateShoppingItem] = useMutation(!!itemId ? UPDATE_SHOPPING_ITEM : CREATE_SHOPPING_ITEM);
+
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+        watch,
+        setValue
+    } = useFormContext();
+
+    const duedTime = watch("duedTime");
+
+    const onSubmit = async (data) => {
+        await mutateShoppingItem({
+            variables: {
+                userId: user.id,
+                input: {
+                    ...data,
+                    price: Number(data.price.replaceAll(",", ""))
+                },
+                itemId: itemId,
+            }
+        });
+        onClose();
+    }
 
     return (
-        <div className="space-y-4">
-            {/* Task field */}
-            <div className="flex items-center gap-4">
-                <label className="w-24 text-sm font-semibold text-black">
-                    Task <span className="text-red-500">*</span>
-                </label>
-                <div className="flex-1 max-w-xs relative" ref={taskDropdownRef}>
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={formData.task}
-                            onChange={e => {
-                                setFormData({ ...formData, task: e.target.value });
-                                setShowTaskDropdown(true);
-                            }}
-                            onFocus={() => setShowTaskDropdown(true)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-black placeholder:text-gray-400 pr-10"
-                            placeholder="Select task"
-                            autoComplete="off"
-                        />
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid grid-cols-2 gap-4">
+                {/* Task */}
+                <div>
+                    <label className="text-sm font-semibold text-primary-strong">
+                        Task
+                    </label>
 
-                        {/* Chevron button */}
-                        <button
-                            type="button"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-transparent border-none cursor-pointer"
-                            tabIndex={0}
-                            onMouseDown={e => {
-                                e.preventDefault();
-                                setShowTaskDropdown(v => !v);
-                            }}
+                    <div className="relative">
+                        <select
+                            {...register("taskId")}
+                            className="w-full appearance-none rounded-lg border border-primary/20 bg-white px-3 py-2 pr-10 text-sm outline-none focus:border-primary/50"
                         >
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
+                            <option value="">-- Select Task --</option>
+                            {tasks?.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.title}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/70" />
                     </div>
-                    
-                    {/* Dropdown */}
-                    {showTaskDropdown && (
-                        <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg z-20 max-h-48 overflow-y-auto">
-                            {taskOptions.filter(task => task.title.toLowerCase().includes(formData.task.toLowerCase())).length === 0 ? (
-                                <div className="px-4 py-2 text-gray-400">No task found</div>
-                            ) : (
-                                taskOptions
-                                    .filter(task => task.title.toLowerCase().includes(formData.task.toLowerCase()))
-                                    .map(task => (
-                                        <div
-                                            key={task.id}
-                                            className={`px-4 py-2 hover:bg-gray-100 cursor-pointer text-black ${formData.taskId === task.id ? "bg-gray-50" : ""}`}
-                                            onMouseDown={() => {
-                                                setFormData({ ...formData, task: task.title, taskId: task.id });
-                                                setShowTaskDropdown(false);
-                                            }}
-                                        >
-                                            {task.title}
-                                        </div>
-                                    ))
-                            )}
-                        </div>
-                    )}
+                    <p className="mt-1 min-h-[16px] text-red-500 text-xs">
+                        {errors.taskId?.message || ""}
+                    </p>
+                </div>
+
+                {/* Budget Category */}
+                <div>
+                    <label className="text-sm font-semibold text-primary-strong">
+                        Budget Category
+                    </label>
+
+                    <div className="relative">
+                        <select
+                            {...register("budgetId")}
+                            className="w-full appearance-none rounded-lg border border-primary/20 bg-white px-3 py-2 pr-10 text-sm outline-none focus:border-primary/50"
+                        >
+                            {budgetCategories?.map((c) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/70" />
+                    </div>
+
+                    <p className="mt-1 min-h-[16px] text-red-500 text-xs">
+                        {errors.budgetId?.message || ""}
+                    </p>
                 </div>
             </div>
-            
-            {/* Item details row */}
-            <div className="flex flex-wrap items-start gap-4">
+
+            {/* Grid row */}
+            <div className="grid grid-cols-5 gap-4">
                 {/* Item name */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-black font-semibold">
-                        Item name <span className="text-red-500">*</span>
-                    </label>
+                <FieldRow label="Item Name" className="col-span-2">
                     <input
+                        {...register("name")}
                         type="text"
-                        value={formData.itemName}
-                        onChange={e => setFormData({ ...formData, itemName: e.target.value })}
-                        className="w-40 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-black placeholder:text-gray-400"
-                        placeholder="Enter item name"
+                        className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
                     />
-                </div>
-                
-                {/* Budget category */}
-                <div className="flex flex-col gap-1 relative">
-                    <label className="text-sm text-black font-semibold">
-                        Budget Category <span className="text-red-500">*</span>
-                    </label>
-                    <div
-                        className="w-36 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer flex justify-between items-center bg-white focus:border-primary"
-                        tabIndex={0}
-                        onClick={() => setShowCategoryDropdown(true)}
-                        onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 150)}
-                    >
-                        <span className={formData.budgetCategory ? "text-black" : "text-gray-400"}>
-                            {budgetCategories.find(c => c.id === formData.budgetCategory)?.name || "Select"}
-                        </span>
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    {showCategoryDropdown && (
-                        <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-gray-300 rounded-lg shadow-lg z-20" tabIndex={0} onBlur={() => setShowCategoryDropdown(false)}>
-                            {budgetCategories.map(category => (
-                                <div
-                                    key={category.id}
-                                    className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 text-black ${formData.budgetCategory === category.id ? "bg-gray-50" : ""}`}
-                                    onMouseDown={() => {
-                                        setFormData({
-                                            ...formData,
-                                            budgetCategory: category.id,
-                                            budgetCategoryName: category.name
-                                        });
-                                        setShowCategoryDropdown(false);
-                                    }}
-                                >
-                                    {(formData.budgetCategory === category.id) && (
-                                        <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                    )}
-                                    {category.name}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-                
-                {/* Estimated price */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-black font-semibold">
-                        Estimated price <span className="text-red-500">*</span>
-                    </label>
+
+                    <p className="min-h-[16px] text-red-500 text-xs">
+                        {errors.name?.message || ""}
+                    </p>
+                </FieldRow>
+
+                {/* Price */}
+                <FieldRow label="Estimated Price" className="col-span-1">
                     <div className="relative">
                         <input
-                            type="text"
-                            value={formatNumberWithCommas(formData.estimatedPrice)}
-                            onChange={e => {
+                            {...register("price")}
+                            value={formatNumberWithCommas(watch("price"))}
+                            onChange={(e) => {
                                 const raw = e.target.value.replace(/,/g, "");
-                                if (/^\d*$/.test(raw)) {
-                                    setFormData({ ...formData, estimatedPrice: raw });
-                                }
+                                setValue("price", raw, { shouldValidate: true });
                             }}
-                            className="w-36 pr-6 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-black placeholder:text-gray-400"
-                            placeholder="0"
-                            style={{ paddingRight: '3rem' }}
+                            type="text"
+                            min={0}
+                            className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm bg-white pl-1">VND</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm bg-white pl-1 text-primary/60">
+                            VND
+                        </span>
                     </div>
-                </div>
+
+                    <p className="min-h-[16px] text-red-500 text-xs">
+                        {errors.price?.message || ""}
+                    </p>
+                </FieldRow>
 
                 {/* Quantity */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-black font-semibold">
-                        Quantity <span className="text-red-500">*</span>
-                    </label>
+                <FieldRow label="Quantity" className="col-span-1">
                     <input
+                        {...register("quantity")}
                         type="number"
-                        value={formData.quantity}
-                        onChange={e => setFormData({ ...formData, quantity: e.target.value })}
-                        className="w-20 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-center text-black"
-                        min="1"
+                        min={1}
+                        className="w-full rounded-lg border border-primary/20 bg-white px-2 py-2 text-sm outline-none focus:border-primary/50"
                     />
-                </div>
 
-                {/* Dued date */}
-                <div className="flex flex-col gap-1">
-                    <label className="text-sm text-black font-semibold">
-                        Dued date <span className="text-red-500">*</span>
-                    </label>
+                    <p className="min-h-[16px] text-red-500 text-xs">
+                        {errors.quantity?.message || ""}
+                    </p>
+                </FieldRow>
+
+                {/* Due time */}
+                <FieldRow label="Due Time" className="col-span-1">
                     <input
+                        {...register("duedTime")}
                         type="date"
-                        value={formData.duedDate}
-                        onChange={e => setFormData({ ...formData, duedDate: e.target.value })}
-                        className="w-36 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary text-black"
+                        className="w-full rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm outline-none focus:border-primary/50"
                     />
 
                     {/* Timeline tag */}
-                    {formData.timeline && (
-                        <div className="mt-1 flex justify-end">
-                            <span className="inline-block px-3 py-1 text-xs rounded-full bg-festive text-black">
-                                {formData.timeline}
+                    {duedTime && (
+                        <div className="mt-0 flex justify-end">
+
+                            <span className="inline-block px-2 py-0 text-xs rounded-full bg-accent-soft text-black">
+                                {TIMELINE_MAPPING[getTetTimelineAuto(duedTime)]}
                             </span>
                         </div>
-                    )}
-                </div>
+                        )}
+                </FieldRow>
 
                 {/* Status */}
-                <div className="flex flex-col gap-1 relative">
-                    <label className="text-sm text-black font-semibold">
-                        Status <span className="text-red-500">*</span>
-                    </label>
-                    <div
-                        className="w-36 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer flex justify-between items-center bg-white focus:border-primary"
-                        tabIndex={0}
-                        onClick={() => setShowStatusDropdown(true)}
-                        onBlur={() => setTimeout(() => setShowStatusDropdown(false), 150)}
-                    >
-                        <span className={formData.status ? "text-black" : "text-gray-400"}>
-                            {formData.status || "Select status"}
-                        </span>
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </div>
-                    {showStatusDropdown && (
-                        <div className="absolute top-full left-0 mt-1 w-32 bg-white border border-gray-300 rounded-lg shadow-lg z-20" tabIndex={0} onBlur={() => setShowStatusDropdown(false)}>
-                            {statusOptions.map(status => (
-                                <div
-                                    key={status}
-                                    className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center gap-2 text-black ${formData.status === status ? "bg-gray-50" : ""}`}
-                                    onMouseDown={() => {
-                                        setFormData({ ...formData, status });
-                                        setShowStatusDropdown(false);
-                                    }}
-                                >
-                                    {formData.status === status && (
-                                        <svg className="w-4 h-4 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                                        </svg>
-                                    )}
-                                    {status}
-                                </div>
+                <FieldRow label="Status" className="col-span-1">
+                    <div className="relative">
+                        <select
+                            {...register("status")}
+                            className="w-full appearance-none rounded-lg border border-primary/20 bg-white px-3 py-2 pr-10 text-sm outline-none focus:border-primary/50"
+                        >
+                            {SHOPPING_ITEM_STATUS.map((o) => (
+                                <option key={o} value={o}>
+                                    {o}
+                                </option>
                             ))}
-                        </div>
-                    )}
-                </div>
+                        </select>
+
+                        <ChevronDownIcon className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/70" />
+                    </div>
+
+                    <p className="min-h-[16px] text-red-500 text-xs">
+                        {errors.status?.message || ""}
+                    </p>
+                </FieldRow>
             </div>
-        </div>
+            {/* Save button */}
+            <div className="pt-4 flex justify-center">
+                <CommonButton
+                    label="Save change"
+                    color="accent"
+                    type="submit"
+                />
+            </div>
+        </form>
     );
+}
+
+function FieldRow({ label, children, inline = false }) {
+  return (
+    <div
+      className={`grid gap-1 items-start ${
+        inline ? "grid-cols-[80px_1fr]" : "grid-cols-1"
+      }`}
+    >
+      <label className="text-sm font-semibold text-primary-strong leading-none">
+        {label}
+      </label>
+
+      <div className="flex flex-col gap-1 min-h-[52px]">
+        {children}
+      </div>
+    </div>
+  );
 }
