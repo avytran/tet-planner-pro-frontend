@@ -3,10 +3,15 @@ import { gql } from "@apollo/client";
 export const GET_TASKS = gql`
     query GetTasksOfUser($userId: String!) {
         getTasks: getTasksOfUser(userId: $userId) {
-            categoryId
-            status
-            timeline
-            duedTime
+            tasks {
+                category {
+                    id
+                    name
+                }
+                status
+                timeline
+                duedTime
+            }
         }
     }
 `;
