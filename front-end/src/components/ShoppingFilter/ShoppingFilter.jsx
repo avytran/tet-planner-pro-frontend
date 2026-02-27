@@ -7,16 +7,17 @@ const FILTER_OPTS = {
     ],
     
     timeline: [
-        { label: "Pre Tet", value: "Pre Tet" },
-        { label: "During Tet", value: "During Tet" },
-        { label: "After Tet", value: "After Tet" }
+        { label: "Pre Tet", value: "Pre_Tet" },
+        { label: "During Tet", value: "During_Tet" },
+        { label: "After Tet", value: "After_Tet" }
     ]
 };
 
 export const ShoppingFilter = ({
     filters, 
     onFilterChange, 
-    categories = []
+    categories = [],
+    maxPrice = 5000000
 }) => {
     
     const handleCheckboxChange = (group, value) => {
@@ -28,7 +29,7 @@ export const ShoppingFilter = ({
         onFilterChange({ ...filters, [group]: newValues });
     };
     
-    const MAX_PRICE_LIMIT = 5000000; 
+    const MAX_PRICE_LIMIT = maxPrice; 
     
     const formatPrice = (value) => {
         return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -46,7 +47,7 @@ export const ShoppingFilter = ({
         }
     };
     
-    const getPercent = (value) => Math.round(((value) / MAX_PRICE_LIMIT) * 100);
+    const getPercent = (value) => MAX_PRICE_LIMIT > 0 ? Math.round(((value) / MAX_PRICE_LIMIT) * 100) : 0;
     
     return (
         <div className="w-full md:w-[220px] shrink-0 text-left rounded-xl p-4 shadow-md border border-gray-200 bg-surface">
@@ -95,10 +96,10 @@ export const ShoppingFilter = ({
                     {categories.length > 0 ? (
                         categories.map((cat) => (
                             <FilterCheckbox 
-                                key={cat} 
-                                label={cat} 
-                                checked={filters.categories?.includes(cat)} 
-                                onChange={() => handleCheckboxChange('categories', cat)}
+                                key={cat.id} 
+                                label={cat.name} 
+                                checked={filters.categories?.includes(cat.id)} 
+                                onChange={() => handleCheckboxChange('categories', cat.id)}
                             />
                         ))
                     ) : (

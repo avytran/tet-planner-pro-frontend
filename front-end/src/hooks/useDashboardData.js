@@ -3,6 +3,7 @@ import { useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { GET_TASKS, GET_TASK_CATEGORY, GET_ITEMS, GET_TOTAL_BUDGET } from '../graphql/queries/dashboard.query';
 import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from "../utils/dashboardUtils";
+import { useAuth } from './useAuth';
 
 /**
  * getTasks
@@ -11,9 +12,10 @@ import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from
  * getTotalBudget
  */
 
+const MAX_CATEGORY = 4;
+
 export function useDashboardData() {
-  const { user } = useContext(AuthContext);
-  const MAX_CATEGORY = 4;
+  const { user } = useAuth();
 
   function useTasks(userId) {
     const { loading, error, data } = useQuery(GET_TASKS, {
@@ -59,7 +61,7 @@ export function useDashboardData() {
     return { loading, error };
   }
 
-  const tasksMap = mapData(tasksData.getTasks)
+  const tasksMap = mapData(tasksData.getTasks.tasks)
   const tasksMapTransformed = transformData(tasksMap.result)
   const tasksTotal = tasksMap.total
   const tasksDone = tasksMap.done
@@ -81,7 +83,7 @@ export function useDashboardData() {
   );
 
   const sorted = Object.entries(
-    tasksData.getTasks.reduce((acc, task) => {
+    tasksData.getTasks.tasks.reduce((acc, task) => {
       acc[task.categoryId] = (acc[task.categoryId] || 0) + 1;
       return acc;
     }, {})
@@ -157,7 +159,7 @@ export function useDashboardData() {
     data: datePoints.map(date => dateMapItems.get(date)?.[budgetId] || 0),
     label: budgetIdLabel[budgetId]
   }));
-  const reminderNotification = reminderNoti(mapDataDued(tasksData.getTasks), mapDataDued(itemsData.getItems.items))
+  const reminderNotification = reminderNoti(mapDataDued(tasksData.getTasks.tasks), mapDataDued(itemsData.getItems.items))
   return {
     loading,
     error,
