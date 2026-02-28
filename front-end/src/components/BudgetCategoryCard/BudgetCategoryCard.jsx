@@ -13,6 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import EditBudgetModal from "../BudgetModal/EditBugetModal";
 import { useDispatch } from "react-redux";
 import { deleteBudgetThunk } from "@/features/budget/budgetThunks";
+import { removeItemsByBudgetId } from "@/features/shoppingList/shoppingListSlice";
 
 export default function BudgetCategoryCard({
   id,
@@ -41,8 +42,7 @@ export default function BudgetCategoryCard({
       await dispatch(
         deleteBudgetThunk({ budgetId: id, userId: user.id }),
       ).unwrap();
-
-      console.log("Deleted successfully");
+      dispatch(removeItemsByBudgetId(id));
     } catch (err) {
       alert("Delete failed");
       console.log(err);

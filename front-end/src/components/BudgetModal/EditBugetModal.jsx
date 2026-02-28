@@ -49,7 +49,6 @@ export default function EditBudgetModal({
           }),
         ).unwrap();
       } else {
-        console.log("this update");
         await dispatch(
           updateBudgetThunk({
             id,

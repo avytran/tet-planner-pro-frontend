@@ -8,7 +8,10 @@ import {
   selectTotalSpending,
   selectBudgetState,
 } from "../features/budget/budgetSelectors";
-import { fetchBudgetData } from "@/features/budget/budgetThunks";
+import {
+  fetchBudgetData,
+  fetchBudgetTotal,
+} from "@/features/budget/budgetThunks";
 
 export const useBudget = (userId) => {
   const dispatch = useDispatch();
@@ -21,6 +24,7 @@ export const useBudget = (userId) => {
   const { status, error } = useSelector(selectBudgetState);
 
   useEffect(() => {
+    if (userId) dispatch(fetchBudgetTotal(userId));
     if (userId) dispatch(fetchBudgetData(userId));
   }, [userId, dispatch]);
 

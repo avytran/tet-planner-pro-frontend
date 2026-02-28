@@ -70,3 +70,37 @@ export const LINE_CHART_DATA = [
     label: "Others",
   },
 ];
+export const xLabels = [
+  "13/02",
+  "14/02",
+  "15/02",
+  "17/02",
+  "18/02",
+  "19/02",
+  "20/02",
+  "21/02",
+  "22/02",
+  "23/02",
+  "24/02",
+];
+
+export const RESET_BUDGET_MESSAGES = [
+  {
+    title: "Reset your entire budget?",
+    message:
+      "This will set your total budget to 0 and permanently remove all budget categories and related shopping items. This action cannot be undone.",
+    primaryLabel: "Reset Everything",
+  },
+  {
+    title: "Clear all budget categories?",
+    message:
+      "All budget categories will be permanently deleted. Your total budget will remain unchanged. This action cannot be undone.",
+    primaryLabel: "Clear Categories",
+  },
+  {
+    title: "Reset this budget?",
+    message:
+      "This will remove all shopping items linked to this budget and reset its spending data. sOther budgets will not be affected. This action cannot be undone.",
+    primaryLabel: "Reset Budget",
+  },
+];
