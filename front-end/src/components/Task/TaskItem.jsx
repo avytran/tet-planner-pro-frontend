@@ -5,13 +5,19 @@ import {
     TrashIcon,
 } from "@heroicons/react/24/outline";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+
+import { useDispatch } from "react-redux";
+import { initScope } from "@/features/undoRedo/undoRedoSlice";
+import { pushHistory } from "@/features/undoRedo/undoRedoSlice";
+
 import { useMutation } from "@apollo/client/react";
 import { DELETE_TASK, PATCH_TASK } from "@/graphql/mutations/task.mutation";
 import { GET_TASKS_OF_USER } from "@/graphql/queries/task.query";
 
-import { TASKS_PER_PAGE } from "@/constants/taskConstant";
+import { serializeTaskInput } from "@/utils/formatTask.util";
+import { TASKS_PER_PAGE, SCOPE } from "@/constants/taskConstant";
 import { PRIORITY_CLASS, STATUS_CLASS, TASK_STATUS_OPTIONS } from "@/constants/taskConstant";
 import { ConfirmModel } from "./ConfirmModel";
 
@@ -87,7 +93,22 @@ export const TaskItem = ({ task, handleOpenEditTaskForm, currentPage }) => {
         },
     });
 
+    const dispatch = useDispatch();
+
+    // Dispatch history
+    useEffect(() => {
+        dispatch(initScope(SCOPE));
+    }, [])
+
     const handleDeleteTask = async () => {
+        // Push history
+        dispatch(
+            pushHistory({
+                scope: SCOPE,
+                record: { type: "DELETE", oldData: serializeTaskInput(task) },
+            })
+        );
+
         await deleteTask({
             variables: {
                 userId: user.id,
@@ -99,6 +120,18 @@ export const TaskItem = ({ task, handleOpenEditTaskForm, currentPage }) => {
     }
 
     const onStatusChange = async (taskId, status) => {
+        // Push history
+        dispatch(
+            pushHistory({
+                scope: SCOPE,
+                record: {
+                    type: "UPDATE",
+                    oldData: serializeTaskInput(task),
+                    newData: serializeTaskInput({ ...task, status }),
+                },
+            })
+        );
+
         await patchTask({
             variables: {
                 userId: user.id,

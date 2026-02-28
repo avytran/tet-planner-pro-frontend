@@ -54,3 +54,5 @@ export const CHART_COLORS = [
 ]
 
 export const TASKS_PER_PAGE = 10;
+
+export const SCOPE = "task";
