@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import ShoppingListCard from "../../components/ShoppingListCard/ShoppingListCard.jsx";
 import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import ShoppingListItem from "../../components/ShoppingListItem/ShoppingListItem.jsx";
@@ -31,15 +31,24 @@ import {
   STATUS_CONFIG,
   xLabels,
 } from "@/constants/budgetConstant.js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
-
-const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const el = document.getElementById(location.hash.replace("#", ""));
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location]);
 
   const {
     totalBudget,
@@ -292,7 +301,7 @@ export default function BudgetManagementPage() {
         </div>
       </>
       <>
-        <div className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative">
+        <div id="budget-categories" className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative">
           <h1 className="font-bold text-5xl text-white">Budget Categories</h1>
           <p className="font-normal text-xl md:text-3xl text-left text-white">
             Budget at a Glance

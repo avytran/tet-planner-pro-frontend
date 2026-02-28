@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_SHOPPING_FORM_DATA } from "@/graphql/queries/shopping.query";
@@ -43,6 +44,8 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
 
     const duedTime = watch("duedTime");
 
+    const navigate = useNavigate();
+
     const onSubmit = async (data) => {
         await mutateShoppingItem({
             variables: {
@@ -64,6 +67,13 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
                 <div>
                     <label className="text-sm font-semibold text-primary-strong">
                         Task
+                        <button
+                            type="button"
+                            onClick={() => { navigate("/task-management") }}
+                            className="ml-2 text-xs text-accent hover:text-accent-strong cursor-pointer"
+                        >
+                            + Add
+                        </button>
                     </label>
 
                     <div className="relative">
@@ -90,6 +100,13 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
                 <div>
                     <label className="text-sm font-semibold text-primary-strong">
                         Budget Category
+                        <button
+                            type="button"
+                            onClick={() => { navigate("/budget-management/#budget-categories") }}
+                            className="ml-2 text-xs text-accent hover:text-accent-strong cursor-pointer"
+                        >
+                            + Add
+                        </button>
                     </label>
 
                     <div className="relative">
@@ -97,6 +114,7 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
                             {...register("budgetId")}
                             className="w-full appearance-none rounded-lg border border-primary/20 bg-white px-3 py-2 pr-10 text-sm outline-none focus:border-primary/50"
                         >
+                            <option value="">-- Select Budget Category --</option>
                             {budgetCategories?.map((c) => (
                                 <option key={c.id} value={c.id}>
                                     {c.name}
