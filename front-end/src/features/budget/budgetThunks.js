@@ -8,26 +8,44 @@ import {
   UPDATE_TOTAL_BUDGET,
 } from "@/graphql/mutations/budget.mutation";
 
+export const fetchBudgetTotal = createAsyncThunk(
+  "budget/fetchBudgetTotal",
+
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apolloClient.query({
+        query: GET_TOTAL_BUDGET,
+        variables: {
+          userId,
+        },
+        fetchPolicy: "network-only",
+      });
+
+      return data.getTotalBudget.totalBudget;
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  },
+);
+
 export const fetchBudgetData = createAsyncThunk(
   "budget/fetchBudgetData",
-  async (userId) => {
-    const [totalRes, budgetsRes] = await Promise.all([
-      apolloClient.query({
-        query: GET_TOTAL_BUDGET,
-        variables: { userId },
-        fetchPolicy: "network-only",
-      }),
-      apolloClient.query({
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apolloClient.query({
         query: GET_BUDGETS,
-        variables: { userId },
+        variables: {
+          userId,
+        },
         fetchPolicy: "network-only",
-      }),
-    ]);
-
-    return {
-      totalBudget: totalRes.data?.getTotalBudget?.totalBudget ?? 0,
-      budgets: budgetsRes.data?.getBudgetsOfUser ?? [],
-    };
+      });
+      return data.getBudgetsOfUser;
+    } catch (err) {
+      if (err.message === "Budget not found") {
+        return [];
+      }
+      return rejectWithValue(err.message);
+    }
   },
 );
 

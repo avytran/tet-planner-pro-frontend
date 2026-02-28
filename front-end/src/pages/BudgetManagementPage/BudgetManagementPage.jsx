@@ -98,7 +98,6 @@ export default function BudgetManagementPage() {
 
     return otherItem.value > 0 ? [...renderedData, otherItem] : renderedData;
   }, [budgets, totalBudget, BUDGET_CHART_COLORS]);
-
   if (
     (budgetError && budgetError !== "Budget not found") ||
     timelineError ||
@@ -167,9 +166,8 @@ export default function BudgetManagementPage() {
                   </PieChart>
                 ) : (
                   <div className="flex">
-                    No spending data yet. <br />
-                    Once you add shopping items, your spending breakdown will
-                    appear here.
+                    No budget allocation data yet. <br /> Once you add a budget,
+                    your allocation will appear here.
                   </div>
                 )}
               </div>
