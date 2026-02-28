@@ -120,7 +120,7 @@ export function progressTaskColor(tasksDone) {
         return "var(--color-success)";
     }
 
-    return "#0043CE";
+    return "var(--color-accent-soft)";
 };
 
 export function progressBudgetColor(budgetSpent) {

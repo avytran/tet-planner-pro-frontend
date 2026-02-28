@@ -43,11 +43,3 @@ export const GET_ITEMS = gql`
         }
     }
 `;
-
-export const GET_TOTAL_BUDGET = gql`
-    query GetTotalBudget($userId: String!) {
-        getTotalBudget(userId: $userId) {
-            totalBudget
-        }
-    }
-`;

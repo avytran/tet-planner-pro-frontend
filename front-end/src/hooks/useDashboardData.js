@@ -1,7 +1,8 @@
 import { useQuery } from '@apollo/client/react';
 import { useDispatch, useSelector } from "react-redux";
 import { selectTotalBudget, selectTotalSpending } from "../features/budget/budgetSelectors";
-import { GET_TASKS, GET_TASK_CATEGORY, GET_ITEMS, GET_TOTAL_BUDGET } from '../graphql/queries/dashboard.query';
+import { selectDashboard, selectTasks, selectItems, selectTasksStats, selectItemsStats, selectCategorySeries, selectItemsCompleted } from "../features/dashboard/dashboardSelectors";
+import { GET_TASKS, GET_TASK_CATEGORY, GET_ITEMS } from '../graphql/queries/dashboard.query';
 import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from "../utils/dashboardUtils";
 import { useAuth } from './useAuth';
 import { useEffect } from 'react';
@@ -10,6 +11,11 @@ import {
   fetchBudgetTotal,
 } from "@/features/budget/budgetThunks";
 
+import {
+  fetchTasks,
+  fetchItems,
+  fetchTaskCategory
+} from "@/features/dashboard/dashboardThunks";
 /**
  * getTasks
  * getTaskCategory
@@ -17,117 +23,46 @@ import {
  * getTotalBudget
  */
 
-const MAX_CATEGORY = 4;
-
 export function useDashboardData() {
   const { user } = useAuth();
   const dispatch = useDispatch();
 
+  // import { selectTasksStats, selectItemsStats, selectCategorySeries } from "../features/dashboard/dashboardSelectors";
+  const { loading, error } = useSelector(selectDashboard);
+
   const totalBudget = useSelector(selectTotalBudget);
   const totalSpending = useSelector(selectTotalSpending);
+  const tasksData = useSelector(selectTasks);
+  const itemsData = useSelector(selectItems);
+  const tasksStats = useSelector(selectTasksStats);
+  const itemsStats = useSelector(selectItemsStats);
+  const categorySeries = useSelector(selectCategorySeries);
+  const itemsCompleted = useSelector(selectItemsCompleted);
 
   useEffect(() => {
     if (user.id) dispatch(fetchBudgetTotal(user.id));
     if (user.id) dispatch(fetchBudgetData(user.id));
+    if (user.id) dispatch(fetchTasks(user.id));
+    if (user.id) dispatch(fetchItems(user.id));
+    if (user.id) dispatch(fetchTaskCategory(user.id));
   }, [user.id, dispatch]);
 
-  function useTasks(userId) {
-    const { loading, error, data } = useQuery(GET_TASKS, {
-      variables: { userId },
-    });
+  // const loading = tasksLoading || itemsLoading || categoryLoading;
+  // const error = tasksError || itemsError || categoryError;
 
-    return { loading, error, data };
-  }
-
-  function useItems(userId) {
-    const { loading, error, data } = useQuery(GET_ITEMS, {
-      variables: { userId },
-    });
-
-    return { loading, error, data };
-  }
-
-  function useTaskCategory(userId, categoryId) {
-    const { loading, error, data } = useQuery(GET_TASK_CATEGORY, {
-      variables: { userId, categoryId },
-    });
-
-    return { loading, error, data };
-  }
-
-  // function useTotalBudget(userId) {
-  //   const { loading, error, data } = useQuery(GET_TOTAL_BUDGET, {
-  //     variables: { userId },
-  //   });
-
-  //   return { loading, error, data };
+  // if (loading || error) {
+  //   return { loading, error };
   // }
 
-  const { loading: tasksLoading, error: tasksError, data: tasksData } = useTasks(user.id);
-  const { loading: itemsLoading, error: itemsError, data: itemsData } = useItems(user.id);
-  const { loading: categoryLoading, error: categoryError, data: categoryData } = useTaskCategory(user.id);
-  // const { loading: budgetLoading, error: budgetError, data: budgetData } = useTotalBudget(user.id);
+  const tasksTotal = tasksStats.total
+  const tasksDone = tasksStats.done
+  const tasksInnerData = tasksStats.innerData
+  const tasksOuterData = tasksStats.outerData
 
-  const loading = tasksLoading || itemsLoading || categoryLoading;
-  const error = tasksError || itemsError || categoryError;
-
-  if (loading || error) {
-    return { loading, error };
-  }
-
-  const tasksMap = mapData(tasksData.getTasks.tasks)
-  const tasksMapTransformed = transformData(tasksMap.result)
-  const tasksTotal = tasksMap.total
-  const tasksDone = tasksMap.done
-  const tasksInnerData = tasksMapTransformed.innerData
-  const tasksOuterData = tasksMapTransformed.outerData
-
-  const itemsMap = mapData(itemsData.getItems.items)
-  const itemsMapTransformed = transformData(itemsMap.result)
-  const itemsTotal = itemsMap.total
-  const itemsDone = itemsMap.done
-  const itemsInnerData = itemsMapTransformed.innerData
-  const itemsOuterData = itemsMapTransformed.outerData
-
-  const itemsCompleted = itemsData.getItems.items.filter(item => item.status === "Completed")
-  // const itemsSpent = itemsCompleted.reduce((acc, item) => acc + item.price * item.quantity, 0);
-
-  const categoryIdMap = Object.fromEntries(
-    categoryData.getTaskCategory.map(c => [c.id, c.name])
-  );
-
-  const sorted = Object.entries(
-    tasksData.getTasks.tasks.reduce((acc, task) => {
-      acc[task.categoryId] = (acc[task.categoryId] || 0) + 1;
-      return acc;
-    }, {})
-  ).sort((a, b) => b[1] - a[1]);
-
-  const finalMap =
-    sorted.length <= MAX_CATEGORY
-      ? Object.fromEntries(sorted)
-      : sorted.reduce((acc, [id, count], index) => {
-        if (index < MAX_CATEGORY - 1) { // top 3
-          acc[id] = count;
-        } else {
-          acc.others = (acc.others || 0) + count;
-        }
-        return acc;
-      }, {});
-
-  const colors = [
-    'var(--color-primary)',
-    'var(--color-accent)',
-    'var(--color-success)',
-    'var(--color-highlight)'
-  ];
-
-  const categorySeries = Object.entries(finalMap).map(([id, value], index) => ({
-    id,
-    value: calPercentage(value, tasksTotal),
-    label: id === "others" ? "Others" : categoryIdMap[id],
-    color: colors[index % colors.length]
-  }));
+  const itemsTotal = itemsStats.total
+  const itemsDone = itemsStats.done
+  const itemsInnerData = itemsStats.innerData
+  const itemsOuterData = itemsStats.outerData
 
   const tasksPercentage = calPercentage(tasksDone, tasksTotal);
   const itemsPercentage = calPercentage(itemsDone, itemsTotal);
@@ -174,7 +109,7 @@ export function useDashboardData() {
     label: budgetIdLabel[budgetId]
   }));
 
-  const reminderNotification = reminderNoti(mapDataDued(tasksData.getTasks.tasks), mapDataDued(itemsData.getItems.items))
+  const reminderNotification = reminderNoti(mapDataDued(tasksData), mapDataDued(itemsData))
   return {
     loading,
     error,
