@@ -15,3 +15,5 @@ export const selectTotalAllocation = (state) =>
 export const selectRemaining = (state) =>
   state.budget.totalBudget -
   state.budget.budgets.reduce((sum, item) => sum + (item.summary || 0), 0);
+
+export const selectSpendingTimeline = (state) => state.budget.spendingTimeline;

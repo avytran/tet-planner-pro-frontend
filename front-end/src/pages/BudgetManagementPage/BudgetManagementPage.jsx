@@ -27,12 +27,17 @@ import {
 import {
   BUDGET_CHART_COLORS,
   BUDGET_COLORS,
-  LINE_CHART_DATA,
+  RESET_BUDGET_MESSAGES,
   STATUS_CONFIG,
-  xLabels,
 } from "@/constants/budgetConstant.js";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { ConfirmationModal } from "@/components/BudgetModal/ConfirmationModal.jsx";
+import {
+  resetBudgetThunk,
+  updateTotalBudgetThunk,
+} from "@/features/budget/budgetThunks.js";
+import { transformSpendingTimelineData } from "@/utils/transformSpendingTimelineData.js";
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
@@ -54,6 +59,7 @@ export default function BudgetManagementPage() {
     totalBudget,
     totalSpending,
     totalAllocation,
+    spendingTimeline,
     remaining,
     budgets,
     loading: budgetLoading,
@@ -68,6 +74,7 @@ export default function BudgetManagementPage() {
 
   const [showTotalDialog, setShowTotalDialog] = useState(false);
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [showResetAllDialog, setShowResetAllDialog] = useState(false);
   const percent =
     totalBudget > 0 ? ((remaining / totalBudget) * 100).toFixed(2) : 0;
 
@@ -107,6 +114,27 @@ export default function BudgetManagementPage() {
 
     return otherItem.value > 0 ? [...renderedData, otherItem] : renderedData;
   }, [budgets, totalBudget, BUDGET_CHART_COLORS]);
+
+  const resetBudget = async () => {
+    try {
+      await dispatch(resetBudgetThunk(user.id)).unwrap();
+      await dispatch(
+        updateTotalBudgetThunk({
+          userId: user.id,
+          amount: parseFloat(0),
+        }),
+      ).unwrap();
+      setShowResetAllDialog(false);
+    } catch (err) {
+      alert("Reset failed. Please try again.");
+    }
+  };
+
+  const { dates, series } = useMemo(
+    () => transformSpendingTimelineData(spendingTimeline),
+    [spendingTimeline, BUDGET_CHART_COLORS],
+  );
+
   if (
     (budgetError && budgetError !== "Budget not found") ||
     timelineError ||
@@ -132,19 +160,19 @@ export default function BudgetManagementPage() {
         <div className="bg-bg px-4 py-12 md:p-20">
           <div className="  flex w-full gap-6 flex-wrap justify-center">
             <div className="flex-1 flex flex-col gap-3 ">
-              <div className="flex gap-3 flex-col md:flex-row">
+              <div className="flex gap-3 flex-col md:flex-row justify-between">
                 <h1 className="font-bold text-5xl text-primary">Overview</h1>
                 <div className="flex gap-3 ">
                   <CommonButton
-                    label="Reset total"
+                    label="Reset data"
                     color="danger"
-                    // onClick={clearAll}
+                    onClick={() => setShowResetAllDialog(true)}
                   />
-                  <CommonButton
+                  {/* <CommonButton
                     label="Clear all budgets"
                     color="accent"
                     // onClick={clearAll}
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -287,8 +315,8 @@ export default function BudgetManagementPage() {
           </p>
           <div className="w-full h-125  ">
             <LineChart
-              series={LINE_CHART_DATA}
-              xAxis={[{ scaleType: "point", data: xLabels, height: 28 }]}
+              series={series}
+              xAxis={[{ scaleType: "point", data: dates, height: 28 }]}
               slotProps={{
                 legend: {
                   direction: "horizontal",
@@ -301,7 +329,10 @@ export default function BudgetManagementPage() {
         </div>
       </>
       <>
-        <div id="budget-categories" className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative">
+        <div
+          id="budget-categories"
+          className="bg-primary w-full flex flex-col justify-center  gap-5 py-12 px-4  md:p-20 relative"
+        >
           <h1 className="font-bold text-5xl text-white">Budget Categories</h1>
           <p className="font-normal text-xl md:text-3xl text-left text-white">
             Budget at a Glance
@@ -449,6 +480,14 @@ export default function BudgetManagementPage() {
         <EditBudgetModal
           type={"Add"}
           onClose={() => setShowBudgetDialog(false)}
+        />
+      )}
+      {showResetAllDialog && (
+        <ConfirmationModal
+          title={RESET_BUDGET_MESSAGES[0].title}
+          message={RESET_BUDGET_MESSAGES[0].message}
+          onClose={() => setShowResetAllDialog(false)}
+          onConfirm={resetBudget}
         />
       )}
     </div>

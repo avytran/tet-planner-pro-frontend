@@ -3,6 +3,7 @@ import {
   fetchShoppingItemsByTimeline,
   fetchTopCostShoppingItems,
 } from "./shoppingListThunk";
+import { resetBudgetThunk } from "../budget/budgetThunks";
 
 const shoppingListSlice = createSlice({
   name: "shoppingList",
@@ -52,15 +53,36 @@ const shoppingListSlice = createSlice({
         state.error.topCost = action.payload;
       })
       .addCase(fetchShoppingItemsByTimeline.pending, (state) => {
-        state.timelineStatus = "loading";
+        state.status.timeline = "loading";
       })
       .addCase(fetchShoppingItemsByTimeline.fulfilled, (state, action) => {
-        state.timelineStatus = "succeeded";
+        state.status.timeline = "succeeded";
         state.itemsByTimeline = action.payload;
       })
       .addCase(fetchShoppingItemsByTimeline.rejected, (state, action) => {
-        state.timelineStatus = "failed";
-        state.timelineError = action.payload;
+        state.status.timeline = "failed";
+        state.error.timeline = action.payload;
+      })
+      .addCase(resetBudgetThunk.pending, (state) => {
+        state.status.timeline = "loading";
+        state.status.topCost = "loading";
+      })
+      .addCase(resetBudgetThunk.fulfilled, (state, action) => {
+        state.status.timeline = "succeeded";
+        state.status.topCost = "succeeded";
+        state.itemsByTimeline = {
+          preTet: [],
+          duringTet: [],
+          afterTet: [],
+          today: [],
+        };
+        state.topCostItems = [];
+      })
+      .addCase(resetBudgetThunk.rejected, (state, action) => {
+        state.status.timeline = "failed";
+        state.status.topCost = "failed";
+        state.error.timeline = action.payload;
+        state.error.topCost = action.payload;
       });
   },
 });
