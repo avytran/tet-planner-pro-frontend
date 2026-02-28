@@ -50,7 +50,7 @@ export default function EditTotalBudgetModal({ onClose }) {
           placeholder="Enter new budget"
           className="w-full p-2 border border-gray-300 rounded-xl mb-2 font-medium focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        <p className="h-full flex justify-end ">VND</p>
+        <p className="h-full flex justify-end mb-2">VND</p>
         {errorMessage && (
           <div className="text-danger mt-2 mb-2">{errorMessage}</div>
         )}
