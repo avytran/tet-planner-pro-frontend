@@ -1,11 +1,4 @@
-import { useEffect, useState } from "react";
+import { ThemeContext } from "@/context/ThemeContext";
+import { useContext } from "react";
 
-export function useTheme() {
-  const [theme, setTheme] = useState("apricot");
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
-  return { theme, setTheme };
-}
+export const useTheme = () => useContext(ThemeContext);

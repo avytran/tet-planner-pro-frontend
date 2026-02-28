@@ -2,12 +2,48 @@ import { Box, Typography } from '@mui/material';
 import { PieChart } from '@mui/x-charts/PieChart';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
-import BudgetMessage from "../../components/BudgetMessage/BudgetMessage.jsx";
 import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
 import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 import { LineChart } from '@mui/x-charts/LineChart';
+import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
+import { useDashboardData } from '../../hooks/useDashboardData';
+import { progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
 
 export default function DashboardPage() {
+  const {
+    loading,
+    error,
+    tasksTotal,
+    tasksDone,
+    tasksInnerData,
+    tasksOuterData,
+    itemsTotal,
+    itemsDone,
+    itemsInnerData,
+    itemsOuterData,
+    tasksPercentage,
+    itemsPercentage,
+    budgetSpentPercentage,
+    categorySeries,
+    timelineSeries,
+    datePoints,
+    reminderNotification
+  } = useDashboardData();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-20">
+        Loading data...
+      </div>);
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center p-20">
+        Fail to load data
+      </div>);
+  }
+
   const date = new Date();
   const dateArray = date.toDateString().split(" ");
   const time = date.toLocaleTimeString("en-US", {
@@ -15,40 +51,8 @@ export default function DashboardPage() {
     minute: '2-digit'
   });
 
-  const tasksDone = 50;
-  const itemsDone = 60;
-  const budgetSpent = 80;
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
-
-  const progressTaskColor = (tasksDone) => {
-    if (tasksDone === 0) {
-      return "#AEA9B1";
-    }
-
-    if (tasksDone >= 60) {
-      return "var(--color-success)";
-    }
-
-    return "var(--color-accent)";
-  };
-
-  const progressBudgetColor = (budgetSpent) => {
-    if (budgetSpent === 0) {
-      return "#AEA9B1";
-    }
-
-    if (budgetSpent === 100) {
-      return "var(--color-primary)";
-    }
-
-    if (budgetSpent >= 80) {
-      return "var(--color-accent)";
-    }
-
-
-    return "var(--color-success)";
-  };
 
   return (
     <div className="dashboard-container bg-bg px-4 py-12 md:p-20">
@@ -80,14 +84,7 @@ export default function DashboardPage() {
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
                     // cornerRadius: 3,
-                    data: [
-                      { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-                      { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-                      { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-                      { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-                      { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-                      { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-                    ],
+                    data: tasksOuterData,
                   },
                   {
                     // startAngle: -135,
@@ -96,11 +93,7 @@ export default function DashboardPage() {
                     outerRadius: 100,
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
-                    data: [
-                      { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-                      { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-                      { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-                    ],
+                    data: tasksInnerData,
                     // arcLabel: (item) => `${item.label}`,
                   }
                 ]}
@@ -121,10 +114,24 @@ export default function DashboardPage() {
                 height={250}
 
               >
-                <PieCenterLabel color="var(--color-primary)">
-                  <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>60</tspan>
-                  <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2" > /120</tspan>
-                </PieCenterLabel>
+                {
+                  tasksTotal === 0 ? (
+                    <PieCenterLabel color="black">
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }}>
+                        No data
+                      </tspan>
+                    </PieCenterLabel>
+                  ) : (
+                    <PieCenterLabel color="var(--color-primary)">
+                      <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                        {tasksDone}
+                      </tspan>
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2">
+                        /{tasksTotal}
+                      </tspan>
+                    </PieCenterLabel>
+                  )
+                }
               </PieChart>
             </Box>
           </div>
@@ -152,14 +159,7 @@ export default function DashboardPage() {
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
                     // cornerRadius: 3,
-                    data: [
-                      { value: 30, color: 'var(--color-success)', label: 'Done' }, // yellow
-                      { value: 10, color: 'color-mix(in srgb, var(--color-success), transparent 50%)', label: 'Not Done' }, // yellow
-                      { value: 10, color: 'var(--color-primary)', label: 'Done' }, // teal
-                      { value: 30, color: 'color-mix(in srgb, var(--color-primary), transparent 50%)', label: 'Not Done' }, // teal
-                      { value: 20, color: 'var(--color-accent)', label: 'Done' }, // teal
-                      { value: 20, color: 'color-mix(in srgb, var(--color-accent), transparent 50%)', label: 'Not Done' }, // red
-                    ],
+                    data: itemsOuterData,
                   },
                   {
                     // startAngle: -135,
@@ -168,11 +168,7 @@ export default function DashboardPage() {
                     outerRadius: 100,
                     highlightScope: { fade: 'global', highlight: 'item' },
                     highlighted: { additionalRadius: 1 },
-                    data: [
-                      { value: 40, color: 'var(--color-success)', label: 'Before Tet' }, // yellow
-                      { value: 40, color: 'var(--color-primary)', label: 'Tet' }, // teal
-                      { value: 40, color: 'var(--color-accent)', label: 'After Tet' }, // teal
-                    ],
+                    data: itemsInnerData,
                     // arcLabel: (item) => `${item.label}`,
                   }
                 ]}
@@ -193,10 +189,24 @@ export default function DashboardPage() {
                 height={250}
 
               >
-                <PieCenterLabel color="var(--color-primary)">
-                  <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>60</tspan>
-                  <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2" > /120</tspan>
-                </PieCenterLabel>
+                {
+                  itemsTotal === 0 ? (
+                    <PieCenterLabel color="black">
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }}>
+                        No data
+                      </tspan>
+                    </PieCenterLabel>
+                  ) : (
+                    <PieCenterLabel color="var(--color-primary)">
+                      <tspan style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                        {itemsDone}
+                      </tspan>
+                      <tspan style={{ fontSize: '15px', fontWeight: 'normal' }} dy="2">
+                        /{itemsTotal}
+                      </tspan>
+                    </PieCenterLabel>
+                  )
+                }
               </PieChart>
             </Box>
           </div>
@@ -207,36 +217,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  tasksDone === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(tasksDone)} />
-                    : tasksDone === 100
-                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(tasksDone)} />
-                      : <DotCircle fillColor={progressTaskColor(tasksDone)} fillBackground="none" />
+                  tasksPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(tasksPercentage)} />
+                    : tasksPercentage === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(tasksPercentage)} />
+                      : <DotCircle fillColor={progressTaskColor(tasksPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {tasksDone}%
+                      {tasksPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Tasks {status(tasksDone)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Tasks {status(tasksPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={tasksDone}
+                    value={tasksPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressTaskColor(tasksDone),
+                        backgroundColor: progressTaskColor(tasksPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(tasksDone)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(tasksPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -249,36 +259,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  itemsDone === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(itemsDone)} />
-                    : itemsDone === 100
-                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(itemsDone)} />
-                      : <DotCircle fillColor={progressTaskColor(itemsDone)} fillBackground="none" />
+                  itemsPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressTaskColor(itemsPercentage)} />
+                    : itemsPercentage === 100
+                      ? <CheckCircle fillColor="white" fillBackground={progressTaskColor(itemsPercentage)} />
+                      : <DotCircle fillColor={progressTaskColor(itemsPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {itemsDone}%
+                      {itemsPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Shopping Items {status(itemsDone)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Shopping Items {status(itemsPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={itemsDone}
+                    value={itemsPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressTaskColor(itemsDone),
+                        backgroundColor: progressTaskColor(itemsPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(itemsDone)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressTaskColor(itemsPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -291,36 +301,36 @@ export default function DashboardPage() {
             <div className="flex flex-row gap-2">
               <div>
                 {
-                  budgetSpent === 0
-                    ? <EmptyCircle fillColor="none" fillBackground={progressBudgetColor(budgetSpent)} />
-                    : budgetSpent >= 80
-                      ? <ExclamationCircle fillColor="white" fillBackground={progressBudgetColor(budgetSpent)} />
-                      : <DotCircle fillColor={progressBudgetColor(budgetSpent)} fillBackground="none" />
+                  budgetSpentPercentage === 0
+                    ? <EmptyCircle fillColor="none" fillBackground={progressBudgetColor(budgetSpentPercentage)} />
+                    : budgetSpentPercentage >= 80
+                      ? <ExclamationCircle fillColor="white" fillBackground={progressBudgetColor(budgetSpentPercentage)} />
+                      : <DotCircle fillColor={progressBudgetColor(budgetSpentPercentage)} fillBackground="none" />
                 }
               </div>
               <div className='flex-1'>
                 <div className="flex gap-2">
                   <div className="progress-context flex flex-row gap-2 items-end">
                     <span className="font-bold text-xl text-black text-left">
-                      {budgetSpent}%
+                      {budgetSpentPercentage}%
                     </span>
-                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Budget {statusBudget(budgetSpent)}</p>
+                    <p className="font-normal text-xs text-gray-500 text-left pb-1">Budget {statusBudget(budgetSpentPercentage)}</p>
                   </div>
                 </div>
                 <Box sx={{ width: "100%", mr: 1 }}>
                   <LinearProgress
                     variant="determinate"
-                    value={budgetSpent}
+                    value={budgetSpentPercentage}
                     sx={{
                       height: 8,
                       borderRadius: 5,
 
                       [`& .${linearProgressClasses.bar}`]: {
-                        backgroundColor: progressBudgetColor(budgetSpent),
+                        backgroundColor: progressBudgetColor(budgetSpentPercentage),
                         borderRadius: 5,
                       },
 
-                      backgroundColor: `color-mix(in srgb, ${progressBudgetColor(budgetSpent)}, transparent 70%)`,
+                      backgroundColor: `color-mix(in srgb, ${progressBudgetColor(budgetSpentPercentage)}, transparent 70%)`,
                     }}
                   />
 
@@ -333,14 +343,12 @@ export default function DashboardPage() {
         <div class="lg:col-span-2 p-10 w-full bg-white rounded-3xl flex flex-col">
           <p className="text-2xl text-black font-semibold pb-[16px]">Spending Timeline</p>
           <LineChart
-            series={[
-              { curve: "linear", color: 'var(--color-success)', data: [0, 5, 2, 6, 3, 9.3, 9.5, 4, 3, 7, 5], label: 'Food' },
-              { curve: "linear", color: 'var(--color-danger)', data: [6, 3, 7, 9.5, 4, 2, 5, 2, 6, 3, 9.3], label: 'Decoration' },
-              { curve: "linear", color: 'var(--color-accent)', data: [9.3, 0, 5, 2, 6, 3, 3, 7, 9.5, 4], label: 'Cloths' },
-              { curve: "linear", color: 'var(--color-highlight)', data: [5, 2, 6, 3, 2, 6, 3, 9.3, 7, 9.5, 4], label: 'Others' },
-            ]}
+            series={timelineSeries}
             height={300}
-
+            colors={rainbowSurgePalette}
+            xAxis={[{
+              scaleType: 'point', data: datePoints
+            }]}
             slotProps={{
               legend: {
                 direction: 'horizontal',
@@ -357,11 +365,7 @@ export default function DashboardPage() {
               {
                 innerRadius: 40,
                 outerRadius: 100,
-                data: [
-                  { value: 30, color: 'var(--color-accent)', label: 'Food' },
-                  { value: 30, color: 'var(--color-danger)', label: 'Decoration' },
-                  { value: 40, color: 'var(--color-primary)', label: 'Others' },
-                ],
+                data: categorySeries,
                 valueFormatter: (item) => `${item.value}%`,
                 highlightScope: { fade: 'global', highlight: 'item' },
                 faded: { innerRadius: 30, additionalRadius: -10 },
@@ -376,20 +380,15 @@ export default function DashboardPage() {
                 padding: 0,
               },
             }}
-          >
-            {/* <PieCenterLabel color="var(--color-primary)" fontSize={13}>
-              Categories
-            </PieCenterLabel> */}
-          </PieChart>
-
+          />
           <div
             className={"px-6 py-7 rounded-2xl justify-items-start bg-accent gap-1.5 flex flex-col"}
           >
-            <p className={"text-base font-semibold text-white"}>Notification</p>
-            <p className={"text-base font-light text-left text-white"}>You have 2 tasks, 3 items to do today.</p>
+            <p className={"text-base font-semibold text-white"}>Reminder</p>
+            <p className={"text-base font-light text-left text-white"}>{reminderNotification}</p>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

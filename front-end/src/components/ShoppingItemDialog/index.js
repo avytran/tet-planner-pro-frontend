@@ -1,1 +1,1 @@
-export { default } from "./ShoppingItemDialog";
+export * from "./ShoppingItemDialog"
