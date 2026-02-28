@@ -32,10 +32,6 @@ import {
 } from "@/constants/budgetConstant.js";
 import { useNavigate, useLocation } from "react-router-dom";
 
-const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
-
-const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
-
 export default function BudgetManagementPage() {
   const { user } = useAuth();
   const navigate = useNavigate();

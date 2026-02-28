@@ -110,10 +110,10 @@ export const ShoppingItemDialog = ({
                     <div className="p-8">
                         {/* Header */}
                         <div className="mb-6">
-                            <h2 className="text-2xl font-medium text-black">
+                            <h2 className="text-3xl font-bold text-primary">
                                 {!!item.id ? "Edit Shopping Item" : "Shopping Item"}
                             </h2>
-                            <p className="text-black/50 text-sm">
+                            <p className="mt-1 text-sm text-primary-strong/60">
                                 Tet is more fun when your budget stays happy too
                             </p>
                         </div>
