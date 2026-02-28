@@ -12,8 +12,13 @@ import Box from "@mui/material/Box";
 import { useAuth } from "@/hooks/useAuth";
 import EditBudgetModal from "../BudgetModal/EditBugetModal";
 import { useDispatch } from "react-redux";
-import { deleteBudgetThunk } from "@/features/budget/budgetThunks";
+import {
+  deleteBudgetThunk,
+  getSpendingTimelineThunk,
+} from "@/features/budget/budgetThunks";
 import { removeItemsByBudgetId } from "@/features/shoppingList/shoppingListSlice";
+import { RESET_BUDGET_MESSAGES } from "@/constants/budgetConstant";
+import { ConfirmationModal } from "../BudgetModal/ConfirmationModal";
 
 export default function BudgetCategoryCard({
   id,
@@ -24,6 +29,7 @@ export default function BudgetCategoryCard({
 }) {
   const { user } = useAuth();
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
+  const [showResetAllDialog, setShowResetAllDialog] = useState(false);
 
   const remainingAmount = totalAmount - amountSpent;
   const percentageUsed = ((amountSpent / totalAmount) * 100).toFixed(2);
@@ -43,6 +49,7 @@ export default function BudgetCategoryCard({
         deleteBudgetThunk({ budgetId: id, userId: user.id }),
       ).unwrap();
       dispatch(removeItemsByBudgetId(id));
+      dispatch(getSpendingTimelineThunk(user.id));
     } catch (err) {
       alert("Delete failed");
       console.log(err);
@@ -60,7 +67,7 @@ export default function BudgetCategoryCard({
         </button>
         <button
           className=" cursor-pointer p-2 rounded-xl hover:bg-bg"
-          onClick={handleDelete}
+          onClick={() => setShowResetAllDialog(true)}
         >
           <TrashIcon className="w-5 h-5  " />
         </button>
@@ -137,6 +144,14 @@ export default function BudgetCategoryCard({
           type={"Edit"}
           onClose={() => setShowBudgetDialog(false)}
           id={id}
+        />
+      )}
+      {showResetAllDialog && (
+        <ConfirmationModal
+          title={RESET_BUDGET_MESSAGES[3].title}
+          message={RESET_BUDGET_MESSAGES[3].message}
+          onClose={() => setShowResetAllDialog(false)}
+          onConfirm={handleDelete}
         />
       )}
     </div>

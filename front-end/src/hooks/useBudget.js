@@ -7,10 +7,12 @@ import {
   selectTotalBudget,
   selectTotalSpending,
   selectBudgetState,
+  selectSpendingTimeline,
 } from "../features/budget/budgetSelectors";
 import {
   fetchBudgetData,
   fetchBudgetTotal,
+  getSpendingTimelineThunk,
 } from "@/features/budget/budgetThunks";
 
 export const useBudget = (userId) => {
@@ -21,11 +23,15 @@ export const useBudget = (userId) => {
   const totalSpending = useSelector(selectTotalSpending);
   const totalAllocation = useSelector(selectTotalAllocation);
   const remaining = useSelector(selectRemaining);
+  const spendingTimeline = useSelector(selectSpendingTimeline);
   const { status, error } = useSelector(selectBudgetState);
 
   useEffect(() => {
-    if (userId) dispatch(fetchBudgetTotal(userId));
-    if (userId) dispatch(fetchBudgetData(userId));
+    if (userId) {
+      dispatch(fetchBudgetTotal(userId));
+      dispatch(fetchBudgetData(userId));
+      dispatch(getSpendingTimelineThunk(userId));
+    }
   }, [userId, dispatch]);
 
   return {
@@ -34,6 +40,7 @@ export const useBudget = (userId) => {
     totalSpending,
     totalAllocation,
     remaining,
+    spendingTimeline,
     loading: status === "loading",
     error,
   };

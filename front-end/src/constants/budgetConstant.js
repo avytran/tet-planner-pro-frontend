@@ -100,7 +100,13 @@ export const RESET_BUDGET_MESSAGES = [
   {
     title: "Reset this budget?",
     message:
-      "This will remove all shopping items linked to this budget and reset its spending data. sOther budgets will not be affected. This action cannot be undone.",
+      "This will remove all shopping items linked to this budget and reset its spending data. Other budgets will not be affected. This action cannot be undone.",
     primaryLabel: "Reset Budget",
+  },
+  {
+    title: "Delete this budget?",
+    message:
+      "This will remove this budget and all shopping items linked to this budget. This action cannot be undone.",
+    primaryLabel: "Delete Budget",
   },
 ];

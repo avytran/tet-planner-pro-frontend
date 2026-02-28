@@ -29,3 +29,14 @@ export const GET_BUDGETS_BY_ID = gql`
     }
   }
 `;
+export const GET_SPENDING_TIMELINE = gql`
+  query GetSpendingTimelineOfUser($userId: String!) {
+    getSpendingTimelineOfUser(userId: $userId) {
+      dates
+      series {
+        data
+        label
+      }
+    }
+  }
+`;
