@@ -101,7 +101,10 @@ export default function ShoppingListPage() {
     if (loading && !currentData) {
         return <Spinner />
     }
-    if (error) return <div className="p-10 text-center text-red-500">Error loading shopping items!</div>;
+    
+    if (error && error.errors[0].message !== "Budget not found") {
+        return <div className="p-10 text-center text-red-500">Error loading shopping items!</div>;
+    }
 
     return (
         <div className="bg-bg min-h-screen flex flex-col px-4 py-12 md:p-20">
