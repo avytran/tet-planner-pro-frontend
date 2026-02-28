@@ -43,3 +43,12 @@ export const UPDATE_BUDGET = gql`
     }
   }
 `;
+export const RESET_BUDGET = gql`
+  mutation DeleteAllBudgetsOfUser($userId: String!) {
+    deleteAllBudgetsOfUser(userId: $userId) {
+      deletedBudgets
+      deletedShoppingItems
+      message
+    }
+  }
+`;

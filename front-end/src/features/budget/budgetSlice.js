@@ -4,6 +4,8 @@ import {
   deleteBudgetThunk,
   fetchBudgetData,
   fetchBudgetTotal,
+  getSpendingTimelineThunk,
+  resetBudgetThunk,
   updateBudgetThunk,
   updateTotalBudgetThunk,
 } from "./budgetThunks";
@@ -13,6 +15,7 @@ const budgetSlice = createSlice({
   initialState: {
     totalBudget: 0,
     budgets: [],
+    spendingTimeline: { dates: [], series: [] },
     status: "idle",
     error: null,
   },
@@ -96,9 +99,32 @@ const budgetSlice = createSlice({
         if (index !== -1) {
           state.budgets[index] = updatedBudget;
         }
-        console.log("updated budget", updatedBudget);
       })
       .addCase(updateBudgetThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+      .addCase(resetBudgetThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(resetBudgetThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.budgets = [];
+        state.totalBudget = 0;
+        state.spendingTimeline = { dates: [], series: [] };
+      })
+      .addCase(resetBudgetThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload;
+      })
+      .addCase(getSpendingTimelineThunk.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(getSpendingTimelineThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.spendingTimeline = action.payload;
+      })
+      .addCase(getSpendingTimelineThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload;
       });

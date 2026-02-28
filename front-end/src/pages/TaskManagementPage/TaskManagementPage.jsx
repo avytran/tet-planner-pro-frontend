@@ -166,8 +166,8 @@ export default function TaskManagementPage() {
   };
 
   return (
-    <section className="bg-bg px-4 py-8 md:px-8 md:py-10">
-      <div className="mx-auto w-full max-w-[1260px] rounded-sm border border-primary/10 bg-surface p-5 md:p-8">
+    <section className="bg-bg min-h-screen flex flex-col px-4 py-12 md:p-20">
+      <div className="container mx-auto max-w-screen-2xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-5xl font-bold text-primary">Task Management</h1>
           <div className="flex items-center gap-3">
