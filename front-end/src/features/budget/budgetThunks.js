@@ -1,9 +1,14 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { apolloClient } from "@/apollo/client";
-import { GET_BUDGETS, GET_TOTAL_BUDGET } from "@/graphql/queries/budget.query";
+import {
+  GET_BUDGETS,
+  GET_SPENDING_TIMELINE,
+  GET_TOTAL_BUDGET,
+} from "@/graphql/queries/budget.query";
 import {
   CREATE_BUDGET,
   DELETE_BUDGET,
+  RESET_BUDGET,
   UPDATE_BUDGET,
   UPDATE_TOTAL_BUDGET,
 } from "@/graphql/mutations/budget.mutation";
@@ -122,6 +127,42 @@ export const updateBudgetThunk = createAsyncThunk(
       return data.updateBudgetOfUser;
     } catch (error) {
       return rejectWithValue(error.message);
+    }
+  },
+);
+
+export const resetBudgetThunk = createAsyncThunk(
+  "budget/resetBudget",
+  async (userId, { rejectWithValue }) => {
+    try {
+      await apolloClient.mutate({
+        mutation: RESET_BUDGET,
+        variables: {
+          userId,
+        },
+      });
+
+      return;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  },
+);
+
+export const getSpendingTimelineThunk = createAsyncThunk(
+  "budget/getSpendingTimeline",
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await apolloClient.query({
+        query: GET_SPENDING_TIMELINE,
+        variables: {
+          userId,
+        },
+        fetchPolicy: "network-only",
+      });
+      return data.getSpendingTimelineOfUser;
+    } catch (err) {
+      return rejectWithValue(err.message);
     }
   },
 );
