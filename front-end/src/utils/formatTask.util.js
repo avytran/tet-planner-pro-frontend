@@ -32,3 +32,14 @@ export const formatTask = (task) => {
     barColor: getBarColorFromPriority(task?.priority)
   };
 };
+
+export const serializeTaskInput = (data) => ({
+  id: data?.id || "",
+  title: data.title,
+  status: data.status,
+  priority: data.priority,
+  categoryId: data.categoryId || data?.category?.id,
+  duedTime: data.duedTime
+    ? new Date(data.duedTime).toISOString()
+    : null,
+});

@@ -2,9 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
   MagnifyingGlassIcon,
-  PencilSquareIcon,
   PlusIcon,
-  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import CommonButton from "../../components/Button/CommonButton";
 import {
@@ -13,12 +11,15 @@ import {
 
 import { useAuth } from "../../hooks/useAuth";
 
+import { useUndoRedoTask } from "@/hooks/useUndoRedoTask";
+
 import { TaskItem } from "@/components/Task/TaskItem";
 import { formatTask } from "@/utils/formatTask.util";
 import { MutateTaskDialog } from "@/components/Task/MutateTaskDialog";
 import { TaskChart } from "@/components/Task/TaskChart";
 import { TaskProgress } from "@/components/Task/TaskProgress";
 import { TaskFilter } from "@/components/Task/TaskFilter";
+import { UndoRedoButtons } from "@/components/UndoRedoButtons/UndoRedoButtons";
 
 import { findItemById } from "@/utils/findItemById";
 import { CHART_COLORS } from "@/constants/taskConstant";
@@ -58,6 +59,8 @@ export default function TaskManagementPage() {
   });
 
   const totalPages = tasksData?.getTasksOfUser?.totalPages || 1;
+
+  const { handleUndo, handleRedo, canUndo, canRedo } = useUndoRedoTask(currentPage);
 
   // Reset page when filter/search change
   useEffect(() => {
@@ -171,6 +174,12 @@ export default function TaskManagementPage() {
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-5xl font-bold text-primary">Task Management</h1>
           <div className="flex items-center gap-3">
+            <UndoRedoButtons 
+              handleUndo={handleUndo}
+              handleRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+            />
             <CommonButton
               leadingIcon={<PlusIcon className="h-4 w-4" />}
               label="Add Task"
