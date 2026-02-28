@@ -3,6 +3,7 @@ import {
   createBudgetThunk,
   deleteBudgetThunk,
   fetchBudgetData,
+  fetchBudgetTotal,
   updateBudgetThunk,
   updateTotalBudgetThunk,
 } from "./budgetThunks";
@@ -22,13 +23,23 @@ const budgetSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchBudgetTotal.pending, (state) => {
+        state.status = "loading";
+      })
+      .addCase(fetchBudgetTotal.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.totalBudget = action.payload;
+      })
+      .addCase(fetchBudgetTotal.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
       .addCase(fetchBudgetData.pending, (state) => {
         state.status = "loading";
       })
       .addCase(fetchBudgetData.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.totalBudget = action.payload.totalBudget;
-        state.budgets = action.payload.budgets;
+        state.budgets = action.payload;
       })
       .addCase(fetchBudgetData.rejected, (state, action) => {
         state.status = "failed";
@@ -85,6 +96,7 @@ const budgetSlice = createSlice({
         if (index !== -1) {
           state.budgets[index] = updatedBudget;
         }
+        console.log("updated budget", updatedBudget);
       })
       .addCase(updateBudgetThunk.rejected, (state, action) => {
         state.status = "failed";

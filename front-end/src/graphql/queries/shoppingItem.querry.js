@@ -11,6 +11,10 @@ export const GET_TOP_COST_SHOPPING_ITEMS = gql`
         name
         price
         quantity
+        budget {
+          id
+          name
+        }
       }
     }
   }
@@ -46,6 +50,7 @@ export const GET_SHOPPING_ITEMS_GROUPED_BY_TIMELINE = gql`
       items {
         id
         budget {
+          id
           name
         }
         duedTime
@@ -61,6 +66,7 @@ export const GET_SHOPPING_ITEMS_GROUPED_BY_TIMELINE = gql`
       items {
         id
         budget {
+          id
           name
         }
         duedTime
@@ -76,6 +82,7 @@ export const GET_SHOPPING_ITEMS_GROUPED_BY_TIMELINE = gql`
       items {
         id
         budget {
+          id
           name
         }
         duedTime

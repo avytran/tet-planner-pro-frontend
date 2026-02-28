@@ -39,6 +39,7 @@ export const UPDATE_BUDGET = gql`
       id
       name
       allocatedAmount
+      summary
     }
   }
 `;
