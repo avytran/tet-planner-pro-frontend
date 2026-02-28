@@ -61,7 +61,6 @@ export const deleteBudgetThunk = createAsyncThunk(
           userId,
         },
       });
-
       return budgetId;
     } catch (err) {
       return rejectWithValue(err.message);

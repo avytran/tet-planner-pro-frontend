@@ -21,22 +21,25 @@ import { useAuth } from "@/hooks/useAuth.js";
 import EditBudgetModal from "@/components/BudgetModal/EditBugetModal.jsx";
 import { useBudget } from "@/hooks/useBudget.js";
 import {
+  useShoppingItem,
   useShoppingItemsByTimeline,
-  useTopCostShoppingItems,
 } from "@/hooks/useShoppingItems.js";
 import {
   BUDGET_CHART_COLORS,
   BUDGET_COLORS,
   LINE_CHART_DATA,
   STATUS_CONFIG,
+  xLabels,
 } from "@/constants/budgetConstant.js";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 
 const colors = ["bg-accent", "bg-accent-soft", "bg-festive"];
 
 export default function BudgetManagementPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const {
     totalBudget,
@@ -48,24 +51,14 @@ export default function BudgetManagementPage() {
     error: budgetError,
   } = useBudget(user.id);
 
-  const {
-    preTet: preTetShoppingItems,
-    duringTet: duringTetShoppingItems,
-    afterTet: afterTetShoppingItems,
-    today: todayShoppingItems,
-    loading: shoppingItemsLoading,
-    error: shoppingItemsError,
-  } = useShoppingItemsByTimeline(user.id);
-
-  const {
-    data: topCostShoppingItems,
-    loading: topShoppingItemsLoading,
-    error: topShoppingItemsError,
-  } = useTopCostShoppingItems(user.id);
+  const { preTet, duringTet, afterTet, today, timelineLoading, timelineError } =
+    useShoppingItemsByTimeline(user.id);
+  const { topCostItems, topCostLoading, topCostError } = useShoppingItem(
+    user.id,
+  );
 
   const [showTotalDialog, setShowTotalDialog] = useState(false);
   const [showBudgetDialog, setShowBudgetDialog] = useState(false);
-  // const value = 0;
   const percent =
     totalBudget > 0 ? ((remaining / totalBudget) * 100).toFixed(2) : 0;
 
@@ -107,9 +100,9 @@ export default function BudgetManagementPage() {
   }, [budgets, totalBudget, BUDGET_CHART_COLORS]);
 
   if (
-    (budgetError && budgetError.message !== "Budget not found") ||
-    shoppingItemsError ||
-    topShoppingItemsError
+    (budgetError && budgetError !== "Budget not found") ||
+    timelineError ||
+    topCostError
   )
     return (
       <div className="flex justify-center items-center p-20">
@@ -119,7 +112,7 @@ export default function BudgetManagementPage() {
 
   return (
     <div>
-      {budgetLoading || shoppingItemsLoading || topShoppingItemsLoading ? (
+      {budgetLoading || timelineLoading || topCostLoading ? (
         <div className=" flex justify-center items-center p-20 absolute h-full w-full">
           <Box sx={{ display: "flex" }}>
             <CircularProgress />
@@ -131,7 +124,22 @@ export default function BudgetManagementPage() {
         <div className="bg-bg px-4 py-12 md:p-20">
           <div className="  flex w-full gap-6 flex-wrap justify-center">
             <div className="flex-1 flex flex-col gap-3 ">
-              <h1 className="font-bold text-5xl text-primary">Overview</h1>
+              <div className="flex gap-3 flex-col md:flex-row">
+                <h1 className="font-bold text-5xl text-primary">Overview</h1>
+                <div className="flex gap-3 ">
+                  <CommonButton
+                    label="Reset total"
+                    color="danger"
+                    // onClick={clearAll}
+                  />
+                  <CommonButton
+                    label="Clear all budgets"
+                    color="accent"
+                    // onClick={clearAll}
+                  />
+                </div>
+              </div>
+
               <div className="bg-white rounded-3xl p-9 flex flex-col gap-7 h-full">
                 <div className="flex  gap-2 items-center ">
                   <div className="h-3 w-3 rounded-full bg-danger"></div>
@@ -243,9 +251,9 @@ export default function BudgetManagementPage() {
               />
               <div>
                 <p className="text-2xl font-semibold mb-4">High-Impact Items</p>
-                {topCostShoppingItems.length > 0 ? (
+                {topCostItems.length > 0 ? (
                   <ul className="flex flex-col gap-4">
-                    {topCostShoppingItems.slice(0, 3).map((item, index) => (
+                    {topCostItems.slice(0, 3).map((item, index) => (
                       <ShoppingListItem
                         key={item.id}
                         name={item.name}
@@ -273,6 +281,7 @@ export default function BudgetManagementPage() {
           <div className="w-full h-125  ">
             <LineChart
               series={LINE_CHART_DATA}
+              xAxis={[{ scaleType: "point", data: xLabels, height: 28 }]}
               slotProps={{
                 legend: {
                   direction: "horizontal",
@@ -327,14 +336,12 @@ export default function BudgetManagementPage() {
           <p className="font-normal text-xl md:text-3xl text-center">
             Don’t miss a thing to make your Tết truly complete
           </p>
-          {preTetShoppingItems.length > 0 ||
-          duringTetShoppingItems.length > 0 ||
-          afterTetShoppingItems.length > 0 ? (
+          {preTet.length > 0 || duringTet.length > 0 || afterTet.length > 0 ? (
             <div className="flex  w-full flex-wrap gap-5 justify-center">
               <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col ">
                 <p className="font-bold text-xl text-center">Pre Tet</p>
                 <ul className="flex flex-col gap-5 items-center overflow-y-auto  max-h-175">
-                  {preTetShoppingItems.map((item) => (
+                  {preTet.map((item) => (
                     <ShoppingListCard
                       key={item.id}
                       category={"Decoration"}
@@ -350,7 +357,7 @@ export default function BudgetManagementPage() {
               <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
                 <p className="font-bold text-xl text-center">During Tet</p>
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                  {duringTetShoppingItems.map((item) => (
+                  {duringTet.map((item) => (
                     <ShoppingListCard
                       key={item.id}
                       category={"Decoration"}
@@ -366,7 +373,7 @@ export default function BudgetManagementPage() {
               <div className="flex-1 p-5 rounded-3xl gap-5 flex flex-col">
                 <p className="font-bold text-xl text-center">After Tet</p>
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                  {afterTetShoppingItems.map((item) => (
+                  {afterTet.map((item) => (
                     <ShoppingListCard
                       key={item.id}
                       category={"Decoration"}
@@ -384,7 +391,7 @@ export default function BudgetManagementPage() {
                   Today
                 </p>
                 <ul className="flex flex-col gap-5 items-center  overflow-y-auto  max-h-175">
-                  {todayShoppingItems.map((item) => (
+                  {today.map((item) => (
                     <ShoppingListCard
                       key={item.id}
                       category={"Decoration"}

@@ -85,6 +85,7 @@ const budgetSlice = createSlice({
         if (index !== -1) {
           state.budgets[index] = updatedBudget;
         }
+        console.log("updated budget", updatedBudget);
       })
       .addCase(updateBudgetThunk.rejected, (state, action) => {
         state.status = "failed";
