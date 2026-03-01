@@ -6,12 +6,15 @@ import {
 } from "../utils/dashboardUtils";
 import { useEffect } from 'react';
 import {
+  selectBudgetState,
   selectTotalBudget,
   selectTotalSpending,
+  selectSpendingTimeline
 } from "../features/budget/budgetSelectors";
 import {
   fetchBudgetData,
   fetchBudgetTotal,
+  getSpendingTimelineThunk,
 } from "@/features/budget/budgetThunks";
 import {
   selectDashboard,
@@ -20,12 +23,15 @@ import {
   selectTasksStats,
   selectItemsStats,
   selectCategorySeries,
-  selectItemsCompleted,
+  selectTasksTotal,
+  selectItemsTotal,
 } from "../features/dashboard/dashboardSelectors";
 import {
   fetchTasks,
   fetchItems,
   fetchTaskCategory,
+  fetchTasksTotal,
+  fetchItemsTotal,
 } from "@/features/dashboard/dashboardThunks";
 /**
  * getTasks
@@ -37,41 +43,57 @@ import {
 export function useDashboardData(userId) {
   const dispatch = useDispatch();
 
-  // import { selectTasksStats, selectItemsStats, selectCategorySeries } from "../features/dashboard/dashboardSelectors";
-  const { loading, error } = useSelector(selectDashboard);
+  const { loadingDashboard, errorDashboard } = useSelector(selectDashboard);
+  const { loadingBudgets, errorBudgets } = useSelector(selectBudgetState);
 
   const totalBudget = useSelector(selectTotalBudget);
   const totalSpending = useSelector(selectTotalSpending);
+  const tasksTotal = useSelector(selectTasksTotal);
+  const itemsTotal = useSelector(selectItemsTotal);
+  const spendingTimeline = useSelector(selectSpendingTimeline);
   const tasksData = useSelector(selectTasks);
   const itemsData = useSelector(selectItems);
   const tasksStats = useSelector(selectTasksStats);
   const itemsStats = useSelector(selectItemsStats);
   const categorySeries = useSelector(selectCategorySeries);
-  const itemsCompleted = useSelector(selectItemsCompleted);
 
   useEffect(() => {
     if (userId) {
       dispatch(fetchBudgetTotal(userId));
       dispatch(fetchBudgetData(userId));
-      dispatch(fetchTasks(userId));
-      dispatch(fetchItems(userId));
+      dispatch(fetchTasksTotal(userId));
+      dispatch(fetchItemsTotal(userId));
       dispatch(fetchTaskCategory(userId))
+      dispatch(getSpendingTimelineThunk(userId))
     }
   }, [userId, dispatch]);
 
-  // const loading = tasksLoading || itemsLoading || categoryLoading;
-  // const error = tasksError || itemsError || categoryError;
+  useEffect(() => {
+    if (userId && tasksTotal && itemsTotal) {
+      dispatch(fetchTasks(
+        {
+          userId: userId,
+          params: { pageSize: tasksTotal }
+        }
+      ));
+      dispatch(fetchItems(
+        {
+          userId: userId,
+          params: { pageSize: itemsTotal }
+        }
+      ));
+    }
+  }, [userId, tasksTotal, itemsTotal, dispatch]);
 
-  // if (loading || error) {
-  //   return { loading, error };
-  // }
+  const loading = (loadingDashboard === "loading") || (loadingBudgets === "loading");
+  const error = (errorDashboard === "failed") || (errorBudgets === "failed");
 
-  const tasksTotal = tasksStats.total
+  // const tasksTotal = tasksStats.total
   const tasksDone = tasksStats.done
   const tasksInnerData = tasksStats.innerData
   const tasksOuterData = tasksStats.outerData
 
-  const itemsTotal = itemsStats.total
+  // const itemsTotal = itemsStats.total
   const itemsDone = itemsStats.done
   const itemsInnerData = itemsStats.innerData
   const itemsOuterData = itemsStats.outerData
@@ -80,48 +102,8 @@ export function useDashboardData(userId) {
   const itemsPercentage = calPercentage(itemsDone, itemsTotal);
   const budgetSpentPercentage = calPercentage(totalSpending, totalBudget);
 
-  const budgetIdLabel = Object.fromEntries(
-    [...new Map(itemsCompleted.map(item => [item.budget.id, item.budget.name]))]
-  );
-
-  const budgetIdArr = Object.keys(budgetIdLabel);
-  let dateMapItems = new Map();
-
-  itemsCompleted.forEach(item => {
-    const day = new Date(item.duedTime).toISOString().split('T')[0];
-    const value = item.price * item.quantity;
-    const budgetId = item.budget.id;
-
-    if (!dateMapItems.has(day)) {
-      const dayData = Object.fromEntries(
-        budgetIdArr.map(id => [id, 0])
-      );
-      dateMapItems.set(day, dayData);
-    }
-
-    const existing = dateMapItems.get(day);
-    existing[budgetId] += value;
-  });
-
-  const sortedMap = new Map();
-  for (let [date, data] of dateMapItems) {
-    const sortedData = {};
-    budgetIdArr.forEach(id => {
-      sortedData[id] = data[id] || 0;
-    });
-    sortedMap.set(date, sortedData);
-  }
-
-  const datePoints = [...dateMapItems.keys()].sort();
-
-  const timelineSeries = budgetIdArr.map((budgetId, index) => ({
-    id: index,
-    curve: "linear",
-    data: datePoints.map(date => dateMapItems.get(date)?.[budgetId] || 0),
-    label: budgetIdLabel[budgetId]
-  }));
-
   const reminderNotification = reminderNoti(mapDataDued(tasksData), mapDataDued(itemsData))
+
   return {
     loading,
     error,
@@ -137,8 +119,7 @@ export function useDashboardData(userId) {
     itemsPercentage,
     budgetSpentPercentage,
     categorySeries,
-    timelineSeries,
-    datePoints,
+    spendingTimeline,
     reminderNotification
   };
 }

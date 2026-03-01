@@ -1,8 +1,12 @@
-import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from "../../utils/dashboardUtils";
+import { mapData, transformData, calPercentage } from "../../utils/dashboardUtils";
 import { createSelector } from "@reduxjs/toolkit";
 import { CATEGORY_COLORS, MAX_CATEGORY } from "@/constants/dashboardConstant"
 
 export const selectDashboard = (state) => state.dashboard;
+
+export const selectTasksTotal = (state) => state.dashboard.tasksTotal;
+
+export const selectItemsTotal = (state) => state.dashboard.itemsTotal;
 
 export const selectTasks = (state) => state.dashboard.tasks;
 
