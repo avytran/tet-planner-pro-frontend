@@ -171,3 +171,16 @@ export function generateItems(days = 10, budgets = 4, itemsPerDay = 6) {
 
     return data;
 }
+
+export function transformSpendingTimelineData(timelineData) {
+    if (!timelineData || timelineData.length === 0)
+        return { dates: [], series: [] };
+    const dates = timelineData.dates;
+    const series = timelineData.series.map((item, index) => ({
+        id: index,
+        curve: "linear",
+        data: item.data,
+        label: item.label,
+    }));
+    return { dates, series };
+};

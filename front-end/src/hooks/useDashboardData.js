@@ -1,10 +1,22 @@
-import { useQuery } from '@apollo/client/react';
 import { useDispatch, useSelector } from "react-redux";
-import { selectTotalBudget, selectTotalSpending } from "../features/budget/budgetSelectors";
-import { selectDashboard, selectTasks, selectItems, selectTasksStats, selectItemsStats, selectCategorySeries, selectItemsCompleted } from "../features/dashboard/dashboardSelectors";
-import { GET_TASKS, GET_TASK_CATEGORY, GET_ITEMS } from '../graphql/queries/dashboard.query';
-import { mapData, transformData, calPercentage, mapDataDued, reminderNoti } from "../utils/dashboardUtils";
-import { useAuth } from './useAuth';
+import {
+  selectTotalBudget,
+  selectTotalSpending,
+} from "../features/budget/budgetSelectors";
+import {
+  selectDashboard,
+  selectTasks,
+  selectItems,
+  selectTasksStats,
+  selectItemsStats,
+  selectCategorySeries,
+  selectItemsCompleted,
+} from "../features/dashboard/dashboardSelectors";
+import {
+  calPercentage,
+  mapDataDued,
+  reminderNoti,
+} from "../utils/dashboardUtils";
 import { useEffect } from 'react';
 import {
   fetchBudgetData,
@@ -14,7 +26,7 @@ import {
 import {
   fetchTasks,
   fetchItems,
-  fetchTaskCategory
+  fetchTaskCategory,
 } from "@/features/dashboard/dashboardThunks";
 /**
  * getTasks
@@ -23,8 +35,7 @@ import {
  * getTotalBudget
  */
 
-export function useDashboardData() {
-  const { user } = useAuth();
+export function useDashboardData(userId) {
   const dispatch = useDispatch();
 
   // import { selectTasksStats, selectItemsStats, selectCategorySeries } from "../features/dashboard/dashboardSelectors";
@@ -40,12 +51,14 @@ export function useDashboardData() {
   const itemsCompleted = useSelector(selectItemsCompleted);
 
   useEffect(() => {
-    if (user.id) dispatch(fetchBudgetTotal(user.id));
-    if (user.id) dispatch(fetchBudgetData(user.id));
-    if (user.id) dispatch(fetchTasks(user.id));
-    if (user.id) dispatch(fetchItems(user.id));
-    if (user.id) dispatch(fetchTaskCategory(user.id));
-  }, [user.id, dispatch]);
+    if (userId) {
+      dispatch(fetchBudgetTotal(userId));
+      dispatch(fetchBudgetData(userId));
+      dispatch(fetchTasks(userId));
+      dispatch(fetchItems(userId));
+      dispatch(fetchTaskCategory(userId))
+    }
+  }, [userId, dispatch]);
 
   // const loading = tasksLoading || itemsLoading || categoryLoading;
   // const error = tasksError || itemsError || categoryError;

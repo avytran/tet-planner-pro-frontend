@@ -8,8 +8,11 @@ import { LineChart } from '@mui/x-charts/LineChart';
 import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+
   const {
     loading,
     error,
@@ -28,7 +31,7 @@ export default function DashboardPage() {
     timelineSeries,
     datePoints,
     reminderNotification
-  } = useDashboardData();
+  } = useDashboardData(user.id);
 
   if (loading) {
     return (
