@@ -1,8 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import {
+  calPercentage,
+  mapDataDued,
+  reminderNoti,
+} from "../utils/dashboardUtils";
+import { useEffect } from 'react';
+import {
   selectTotalBudget,
   selectTotalSpending,
 } from "../features/budget/budgetSelectors";
+import {
+  fetchBudgetData,
+  fetchBudgetTotal,
+} from "@/features/budget/budgetThunks";
 import {
   selectDashboard,
   selectTasks,
@@ -12,17 +22,6 @@ import {
   selectCategorySeries,
   selectItemsCompleted,
 } from "../features/dashboard/dashboardSelectors";
-import {
-  calPercentage,
-  mapDataDued,
-  reminderNoti,
-} from "../utils/dashboardUtils";
-import { useEffect } from 'react';
-import {
-  fetchBudgetData,
-  fetchBudgetTotal,
-} from "@/features/budget/budgetThunks";
-
 import {
   fetchTasks,
   fetchItems,
