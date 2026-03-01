@@ -48,8 +48,8 @@ export function useDashboardData(userId) {
 
   const totalBudget = useSelector(selectTotalBudget);
   const totalSpending = useSelector(selectTotalSpending);
-  const tasksTotal = useSelector(selectTasksTotal);
-  const itemsTotal = useSelector(selectItemsTotal);
+  const tasksPageSize = useSelector(selectTasksTotal);
+  const itemsPageSize = useSelector(selectItemsTotal);
   const spendingTimeline = useSelector(selectSpendingTimeline);
   const tasksData = useSelector(selectTasks);
   const itemsData = useSelector(selectItems);
@@ -69,31 +69,31 @@ export function useDashboardData(userId) {
   }, [userId, dispatch]);
 
   useEffect(() => {
-    if (userId && tasksTotal && itemsTotal) {
+    if (userId && tasksPageSize && itemsPageSize) {
       dispatch(fetchTasks(
         {
           userId: userId,
-          params: { pageSize: tasksTotal }
+          params: { pageSize: tasksPageSize }
         }
       ));
       dispatch(fetchItems(
         {
           userId: userId,
-          params: { pageSize: itemsTotal }
+          params: { pageSize: itemsPageSize }
         }
       ));
     }
-  }, [userId, tasksTotal, itemsTotal, dispatch]);
+  }, [userId, tasksPageSize, itemsPageSize, dispatch]);
 
   const loading = (loadingDashboard === "loading") || (loadingBudgets === "loading");
   const error = (errorDashboard === "failed") || (errorBudgets === "failed");
 
-  // const tasksTotal = tasksStats.total
+  const tasksTotal = tasksStats.total
   const tasksDone = tasksStats.done
   const tasksInnerData = tasksStats.innerData
   const tasksOuterData = tasksStats.outerData
 
-  // const itemsTotal = itemsStats.total
+  const itemsTotal = itemsStats.total
   const itemsDone = itemsStats.done
   const itemsInnerData = itemsStats.innerData
   const itemsOuterData = itemsStats.outerData
