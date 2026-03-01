@@ -29,8 +29,8 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
     const tasks = formFieldsData?.getTasksOfUser?.tasks;
 
     const [mutateShoppingItem] = useMutation(!!itemId ? UPDATE_SHOPPING_ITEM : CREATE_SHOPPING_ITEM, {
-        onCompleted: () => {
-            refetch();
+        onCompleted: async () => {
+            await refetch();
         }
     });
 
