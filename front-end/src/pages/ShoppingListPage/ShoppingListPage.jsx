@@ -296,6 +296,7 @@ export default function ShoppingListPage() {
                 openAddDialog && (
                     <ShoppingItemDialog
                         onClose={() => setOpenAddDialog(false)}
+                        refetch={refetch}
                     />
                 )
             }

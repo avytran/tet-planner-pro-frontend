@@ -1,19 +1,27 @@
 import { PRIORITY_OPTIONS, TASK_STATUS_OPTIONS } from "@/constants/taskConstant";
 import CommonButton from "../Button/CommonButton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { createTaskSchema } from "@/schemas/task.schema";
+
 import { useMutation, useQuery } from "@apollo/client/react";
 import { CREATE_TASK, UPDATE_TASK } from "@/graphql/mutations/task.mutation";
+
 import { useAuth } from "@/hooks/useAuth";
-import { formatTimeline } from "@/utils/formatTask.util";
+
+import { useDispatch } from "react-redux";
+import { initScope } from "@/features/undoRedo/undoRedoSlice";
+import { pushHistory } from "@/features/undoRedo/undoRedoSlice";
+
+import { formatTimeline, serializeTaskInput } from "@/utils/formatTask.util";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { ManageCategoryPopup } from "./ManageCategoryPopup";
 import { GET_TASKS_OF_USER } from "@/graphql/queries/task.query";
 import { GET_TASK_CATEGORIES } from "@/graphql/queries/taskCategory.query";
 import { CREATE_TASK_CATEGORY } from "@/graphql/mutations/taskCategory.mutation";
-import { TASKS_PER_PAGE } from "@/constants/taskConstant";
+import { TASKS_PER_PAGE, SCOPE } from "@/constants/taskConstant";
 
 export const TaskForm = ({ selectedTask, handleCloseTaskForm, currentPage }) => {
     const { user } = useAuth();
@@ -68,19 +76,49 @@ export const TaskForm = ({ selectedTask, handleCloseTaskForm, currentPage }) => 
 
     const categories = categoriesData?.getTaskCategoriesOfUser || [];
 
-    const onSubmit = (data) => {
+    const dispatch = useDispatch();
+
+    // Dispatch history
+    useEffect(() => {
+        dispatch(initScope(SCOPE));
+    }, [])
+
+    const onSubmit = async (formData) => {
         let payload = {
-            input: data,
-            userId: user.id,
+            input: formData,
+            userId: user.id
         }
 
+        // If updating
         if (selectedTask) {
+            // Add taskId to payload
             payload = { ...payload, taskId: selectedTask.id };
-        }
+        } 
 
-        mutateTask({
+        const { data } = await mutateTask({
             variables: payload
         });
+
+        if (selectedTask) {
+            dispatch(
+                pushHistory({
+                    scope: SCOPE,
+                    record: {
+                        type: "UPDATE",
+                        oldData: serializeTaskInput(selectedTask),
+                        newData: serializeTaskInput(data.updateTaskOfUser),
+                    },
+                })
+            );
+        } else {
+            dispatch(
+                pushHistory({
+                    scope: SCOPE,
+                    record: { type: "CREATE", newData: serializeTaskInput(data.createTaskOfUser) },
+                })
+            );
+        }
+
         reset();
         handleCloseTaskForm();
     };

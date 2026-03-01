@@ -10,7 +10,7 @@ const createValidation = (amount, rules) => {
 export const validateTotalBudget = (amount, totalAllocation) =>
   createValidation(amount, [
     {
-      condition: (amt) => amt >= 0,
+      condition: (amt) => amt !== null && amt !== "" && amt >= 0 && !isNaN(amt),
       message: "Enter a valid amount",
     },
     {
@@ -23,7 +23,7 @@ export const validateTotalBudget = (amount, totalAllocation) =>
 export const validateBudget = (amount, remaining, spending) =>
   createValidation(amount, [
     {
-      condition: (amt) => amt >= 0,
+      condition: (amt) => amt !== null && amt !== "" && amt >= 0 && !isNaN(amt),
       message: "Enter a valid amount",
     },
     {
