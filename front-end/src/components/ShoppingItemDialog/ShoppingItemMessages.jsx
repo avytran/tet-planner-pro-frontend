@@ -7,7 +7,7 @@ export default function ShoppingItemMessages({
     maxBudget,
     // newItemsCount,
     // addedAmount,
-    onlyTotalCard = false,
+    // onlyTotalCard = false,
     isMsgDisplay = false
 }) {
     let cardColor, textColor, valueColor, progressColor, badgeColor, fitBg, fitText;
@@ -36,47 +36,47 @@ export default function ShoppingItemMessages({
     const clampedPercent = percent > 100 ? 100 : percent;
     const isOverBudget = totalShoppingCost > maxBudget;
 
-    if (onlyTotalCard) {
-        let warningMsg = null;
-        if (percent >= 100) {
-            warningMsg = <div className="text-sm text-red-600 mb-2 font-semibold">Alert: Over budget!</div>;
-        } else if (percent >= 80) {
-            warningMsg = <div className="text-sm text-orange-500 mb-2 font-semibold">Warning: Near budget limit!</div>;
-        }
-        return (
-            <div className="w-full">
-                <div className={`${cardColor} rounded-2xl p-4 shadow-md w-full`}>
-                    <p className={`text-base mb-1 text-black font-semibold`}>Total shopping cost</p>
-                    <div className={`flex justify-between items-center text-xs mb-2 text-black`}>
-                        <span>{clampedPercent}%</span>
-                        <span>{maxBudget.toLocaleString()}</span>
-                    </div>
-                    {/* Progress bar */}
-                    <div className="h-2 bg-gray-200 rounded-full mb-3">
-                        <div
-                            className={`h-2 rounded-full ${progressColor}`}
-                            style={{ width: `${clampedPercent}%` }}
-                        />
-                    </div>
-                    {warningMsg}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <p className={`text-2xl font-bold ${valueColor}`}>{totalShoppingCost.toLocaleString()}</p>
-                            <p className={`text-xs mt-1 ${remainingBudget < 0 ? "text-red-500 font-bold" : textColor}`}>
-                                {remainingBudget < 0 ? "overspent " : "remaining "}{Math.abs(remainingBudget).toLocaleString()}
-                            </p>
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${fitBg}`}>
-                                <WalletIcon className="w-6 h-6 text-white" />
-                            </div>
-                            <span className="text-sm text-black mt-1">VND</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // if (onlyTotalCard) {
+    //     let warningMsg = null;
+    //     if (percent >= 100) {
+    //         warningMsg = <div className="text-sm text-red-600 mb-2 font-semibold">Alert: Over budget!</div>;
+    //     } else if (percent >= 80) {
+    //         warningMsg = <div className="text-sm text-orange-500 mb-2 font-semibold">Warning: Near budget limit!</div>;
+    //     }
+    //     return (
+    //         <div className="w-full">
+    //             <div className={`${cardColor} rounded-2xl p-4 shadow-md w-full`}>
+    //                 <p className={`text-base mb-1 text-black font-semibold`}>Total shopping cost</p>
+    //                 <div className={`flex justify-between items-center text-xs mb-2 text-black`}>
+    //                     <span>{clampedPercent}%</span>
+    //                     <span>{maxBudget.toLocaleString()}</span>
+    //                 </div>
+    //                 {/* Progress bar */}
+    //                 <div className="h-2 bg-gray-200 rounded-full mb-3">
+    //                     <div
+    //                         className={`h-2 rounded-full ${progressColor}`}
+    //                         style={{ width: `${clampedPercent}%` }}
+    //                     />
+    //                 </div>
+    //                 {warningMsg}
+    //                 <div className="flex items-center justify-between">
+    //                     <div>
+    //                         <p className={`text-2xl font-bold ${valueColor}`}>{totalShoppingCost.toLocaleString()}</p>
+    //                         <p className={`text-xs mt-1 ${remainingBudget < 0 ? "text-red-500 font-bold" : textColor}`}>
+    //                           {remainingBudget < 0 ? "overspent " : "remaining "}{Math.abs(remainingBudget).toLocaleString()}
+    //                         </p>
+    //                     </div>
+    //                     <div className="flex flex-col items-center gap-0.5">
+    //                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${fitBg}`}>
+    //                             <WalletIcon className="w-6 h-6 text-white" />
+    //                         </div>
+    //                         <span className="text-sm text-black mt-1">VND</span>
+    //                     </div>
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     let fitMessage = "This item will fit well within your Tet budget";
     let dynamicFitBg = fitBg;
@@ -109,7 +109,7 @@ export default function ShoppingItemMessages({
                 <div className="flex items-center justify-between">
                     <div>
                         <p className={`text-2xl font-bold ${valueColor}`}>
-                            {totalShoppingCost.toLocaleString()}
+                            {maxBudget > 0 ? totalShoppingCost.toLocaleString() : 0}
                         </p>
                         <p className={`text-xs mt-1 ${remainingBudget < 0 ? "text-red-500 font-bold" : textColor}`}>
                             {remainingBudget < 0 ? "overspent " : "remaining "}{Math.abs(remainingBudget).toLocaleString()}

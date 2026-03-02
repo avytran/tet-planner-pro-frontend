@@ -60,7 +60,6 @@ export const ShoppingItemDialog = ({
         skip: !budgetId
     })
 
-    const totalPages = shoppingItemsData?.getShoppingItemsOfUser?.totalPages || 1;
     const shoppingItemsOfTask = shoppingItemsData?.getShoppingItemsOfUser?.items || [];
     const allocatedAmount = budgetData?.getBudgetByIdOfUser?.allocatedAmount || 0;
     const summary = budgetData?.getBudgetByIdOfUser?.summary || 0;
@@ -123,6 +122,7 @@ export const ShoppingItemDialog = ({
                             itemId={item.id}
                             onClose={onClose}
                             refetch={refetch}
+                            remainingBudget={remainingBudget}
                         />
 
                         {/* Preview added section */}

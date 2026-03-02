@@ -11,8 +11,9 @@ import { ShoppingItemDialog } from "@/components/ShoppingItemDialog";
 
 import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_SHOPPING_LIST_DATA } from "../../graphql/queries/shopping.query";
-import { DELETE_SHOPPING_ITEM } from "../../graphql/mutations/shopping.mutation";
+import { DELETE_ALL_SHOPPING_ITEMS } from "../../graphql/mutations/shopping.mutation";
 import Spinner from "@/components/Loading/Spinner/Spinner";
+import { ConfirmModel } from "@/components/Task/ConfirmModel";
 
 import { ITEMS_PER_PAGE } from "@/constants/shoppingConstant";
 import { useSelector } from "react-redux";
@@ -30,10 +31,11 @@ export default function ShoppingListPage() {
   });
   const { user } = useContext(AuthContext);
   const [openAddDialog, setOpenAddDialog] = useState(false);
-  const [deleteShoppingItem] = useMutation(DELETE_SHOPPING_ITEM);
+  const [deleteAllShoppingItems] = useMutation(DELETE_ALL_SHOPPING_ITEMS);
   const [searchValue, setSearchValue] = useState("");
   const [sortValue, setSortValue] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [openConfirm, setOpenConfirm] = useState(false);
 
   const buildParams = () => {
     const params = {
@@ -126,6 +128,17 @@ export default function ShoppingListPage() {
     };
   });
 
+  const handleDeleteAll = async() => {
+    await deleteAllShoppingItems({
+      variables: {
+        userId: user.id
+      }
+    });
+    await refetch();
+    setFilters((f) => ({ ...f, priceRange: [0, 5000000] }));
+    setOpenConfirm(false);
+  }
+
   if (loading && !currentData) {
     return <Spinner />;
   }
@@ -140,6 +153,17 @@ export default function ShoppingListPage() {
 
   return (
     <div className="bg-bg min-h-screen flex flex-col px-4 py-12 md:p-20">
+      {
+        openConfirm && (
+          <ConfirmModel 
+            setOpenConfirm={setOpenConfirm}
+            title="Delete All Shopping Items"
+            msg="Are you sure you want to delete all items?"
+            mutationName="Delete"
+            handleMutation={handleDeleteAll}
+          />
+        )
+      }
       {/* Header */}
       <div className="container mx-auto flex items-center justify-between pb-8">
         <p className="text-5xl font-semibold text-primary">Shopping List</p>
@@ -170,23 +194,12 @@ export default function ShoppingListPage() {
           <CommonButton
             label="Clear All"
             color="danger"
-            onClick={async () => {
-              if (
-                window.confirm(
-                  "Are you sure you want to clear all shopping items?",
-                )
-              ) {
-                for (const item of shoppingItems) {
-                  try {
-                    await deleteShoppingItem({
-                      variables: { userId, itemId: item.id },
-                    });
-                  } catch (e) {}
+            onClick={() => {
+                if (shoppingItems?.length > 0) {
+                  setOpenConfirm(true);
                 }
-                await refetch();
-                setFilters((f) => ({ ...f, priceRange: [0, 5000000] }));
               }
-            }}
+            }
           />
         </div>
       </div>

@@ -16,7 +16,7 @@ import { ChevronDownIcon } from "@heroicons/react/24/outline";
 
 import CommonButton from "../Button/CommonButton";
 
-export default function ShoppingItemForm({ onClose, itemId, refetch }) {
+export default function ShoppingItemForm({ onClose, itemId, refetch, remainingBudget }) {
     const { user } = useAuth();
 
     const { data: formFieldsData } = useQuery(GET_SHOPPING_FORM_DATA, {
@@ -39,7 +39,9 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
         handleSubmit,
         formState: { errors },
         watch,
-        setValue
+        setValue,
+        setError,
+        clearErrors,
     } = useFormContext();
 
     const duedTime = watch("duedTime");
@@ -47,12 +49,23 @@ export default function ShoppingItemForm({ onClose, itemId, refetch }) {
     const navigate = useNavigate();
 
     const onSubmit = async (data) => {
+        const formattedPrice = Number(data.price.replaceAll(",", ""));
+        if (remainingBudget < 0) {
+            setError("price", {
+                type: "manual",
+                message: "Total price cannot exceed the budget.",
+            });
+            return;
+        }
+
+        clearErrors("price");
+
         await mutateShoppingItem({
             variables: {
                 userId: user.id,
                 input: {
                     ...data,
-                    price: Number(data.price.replaceAll(",", ""))
+                    price: formattedPrice
                 },
                 itemId: itemId,
             }

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useMutation, useQuery } from "@apollo/client/react"
 import { GET_SHOPPING_ITEMS_OF_TASK } from "@/graphql/queries/task.query"
-import { DELETE_SHOPPING_ITEM } from "@/graphql/mutations/shoppingItem.mutation"
+import { DELETE_SHOPPING_ITEM } from "@/graphql/mutations/shopping.mutation"
 import { ConfirmModel } from "./ConfirmModel"
 
 export const TaskShoppingItems = ({ taskId }) => {

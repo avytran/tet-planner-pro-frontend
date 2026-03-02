@@ -1,167 +1,217 @@
 
-# 🎉 Tết Planner Pro – Front-End
+# 🧧 Lucky Money Tết Planner Pro – Front-End
 
-Welcome to the **Tết Planner Pro** front-end repository!
-This project is a React-based web application that helps users **plan, track, and optimize their Vietnamese Lunar New Year (Tết) preparation** through task management, shopping & budget planning, and timeline seeing.
-
----
-
-## 🌟 Features
-
-- 📝 **Tết Task Management**: Users can manage all Tết-related tasks.
-- 🛒 **Shopping List with Budget Management**: 
-- ⚠️ **Budget Rules & Warnings**: 
-- 📊 **Tết Timeline Dashboard**:
----
-
-## 🚀 Tech Stack
-
-- **ReactJS**: Robust and flexible front-end library for a responsive, fast, and interactive UI.
+Welcome to the **Lucky Money Tết Planner Pro** front-end repository!
+This project is a React-based application designed to help users **plan, track, and optimize their Vietnamese Lunar New Year (Tết) preparation**. It combines task management, shopping list organization, budget tracking, and timeline visualization using Redux Toolkit for predictable state management and Apollo Client for GraphQL integration.
 
 ---
 
-## 📂 Branch Naming Convention
+## Features
 
-Branches should be named according to their purpose and task:
+- 💰 **Budget Management**: Allocate, track, and visualize spending across categories. Monitor total budget vs. actual spend with spending timelines.
+- 🛒 **Shopping List**: Organize items by Tết timeline phases (Pre Tết, During Tết, After Tết)
+- 📊 **Tết Timeline Dashboard**: Get a quick overview of tasks and shopping items with category-based summaries.
+- 📝 **Tết Task Management**: Plan and manage Tết-related tasks with categorization and status tracking.
+- 🚨 **Authentication**: Secure login, logout, and profile management via Apollo Client GraphQL mutations.
+- 🌸 **Theme Customization**: Toggle between "apricot" and "blossom" themes with localStorage persistence.
+---
 
-```plaintext
-<prefix>/<USXX>-<task-name>
+## Tech Stack
+
+- **React** – Builds a fast and interactive user interface with a component-based architecture.
+- **Redux Toolkit** – Manages global application state in a predictable and scalable way.
+- **React Hook Form** – Handles form state efficiently with minimal re-renders and simple validation.
+- **GraphQL** – Provides flexible and efficient data fetching between client and server.
+- **Apollo Client** – Manages server state and caches GraphQL queries across the application.
+- **Tailwind CSS** – Utility-first CSS framework for rapid and consistent UI development.
+
+---
+
+## State Structure Explanation
+### 1. React Local State
+
+Component-level state (`useState`) is used for temporary UI concerns:
+- Form inputs and validation
+- Modal and dialog toggles
+- Local pagination or filtering
+- Loading spinners and error messages
+
+**Example:**
+```javascript
+const [formData, setFormData] = useState({ name: "", amount: "" });
+const [isModalOpen, setIsModalOpen] = useState(false);
 ```
 
-- **Prefix** options:
-  - `feature/` – for new features
-  - `fix/` – for bug fixes
-  - `chore/` – for non-functional tasks
-  - `refactor/` – for code restructuring
-  
-> Example: If your task is `[US001][FE]Create application`, your branch name would be `feature/US001-create-application`.
+### 2. Context API
 
----
+**AuthContext** (`src/context/AuthContext.jsx`)
+- **Purpose**: Manages authentication state globally across the application.
+- **State shape**:
+  - `user`: Current user object (id, name, metadata)
+  - `status`: "loading" | "authenticated" | "unauthenticated"
+  - Methods: `login()`, `logout()`, `fetchProfile()`
+- **Integration**: Connected to Apollo Client for queries/mutations
 
-## 💾 Commit Message Convention
+**ThemeContext** (`src/context/ThemeContext.jsx`)
+- **Purpose**: Persists and toggles application theme preference.
+- **State shape**:
+  - `theme`: "apricot" | "blossom"
+  - `setTheme()`: Update theme
+  - `toggleTheme()`: Switch between presets
+- **Persistence**: Synced with `localStorage`; applied to `document.documentElement.setAttribute("data-theme", theme)`
 
-Follow a structured commit message format to maintain a clear history:
+### 3. Redux Store
 
-```plaintext
-<prefix>(<USXX>): <commit message>
+Redux Toolkit slices organize domain state into features. Each slice exports reducers, actions, and selectors.
+
+**Store Structure** (`src/app/store.js`):
+```json
+{
+  "budget": {
+    "totalBudget": 5000000,
+    "budgets": [
+      { "id": "b1", "name": "Groceries", "amount": 2000000, "spent": 1500000 }
+    ],
+    "spendingTimeline": { "dates": ["2024-01-01", "2024-01-02"], "series": [100000, 150000] },
+    "selectedBudgetId": "b1",
+    "status": "succeeded",
+    "error": null
+  },
+  "shoppingList": {
+    "topCostItems": [
+      { "id": "s1", "name": "Gift Box", "cost": 500000, "budget": { "id": "b1" } }
+    ],
+    "itemsByTimeline": {
+      "preTet": [{ "id": "s1", "name": "Gift Box" }],
+      "duringTet": [],
+      "afterTet": [],
+      "today": []
+    },
+    "status": { "topCost": "succeeded", "timeline": "succeeded" },
+    "error": { "topCost": null, "timeline": null }
+  },
+  "dashboard": {
+    "tasksTotal": 15,
+    "itemsTotal": 42,
+    "tasks": [{ "id": "t1", "title": "Buy decorations", "completed": false }],
+    "categories": [{ "id": "cat1", "name": "Shopping" }],
+    "items": [{ "id": "i1", "name": "Red lanterns", "status": "pending" }],
+    "status": "succeeded",
+    "error": null
+  },
+  "undoRedo": {
+    "budget": { "past": [], "future": [] },
+    "shoppingList": { "past": [], "future": [] }
+  }
+}
 ```
 
-- **Prefix** options:
-  - `feat` – for new features
-  - `fix` – for bug fixes
-  - `chore` – for maintenance tasks
-  - `refactor` – for code restructuring
-  
-> Example: If your branch is `[US009][FE]create header and footer`, your commit message would be `feat(US009): create home page`.
+**Feature Slices**:
+- **`budget`**: Budget allocation, spending, and timeline data. Dispatches async thunks (`fetchBudgetData`, `updateBudgetThunk`).
+- **`shoppingList`**: Shopping items grouped by Tết timeline (pre-Tết, during, after).
+- **`dashboard`**: Aggregated counts and lists for task/item summaries.
+- **`undoRedo`**: History stacks for undo/redo operations per feature scope.
 
----
+### 4. Undo / Redo State Design
 
-## 🔄 Development Workflow
+The `undoRedo` slice implements a scoped, multi-level undo/redo system:
 
-The development process is organized for efficiency and consistency:
-
-1. **Pull** the latest code from the main branch.
-2. **Create a new branch** from the main branch.
-3. **Code** your assigned task.
-4. **Commit** changes and **stash** if needed.
-5. **Switch to main branch** and pull any new updates.
-6. **Switch back to your working branch** and merge any updates from `main` into it.
-7. **Resolve conflicts** if any.
-8. **Push** your branch to the remote repository.
-9. **Create a pull request** and request reviews.
-10. After approval, **squash and merge** the pull request.
-
-```plaintext
-┌───────────────────────────────┐
-│        Pull from Main         │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│    Create New Branch from     │
-│           Main                │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│             Code              │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│     Commit and Stash if       │
-│           Needed              │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│   Switch to Main Branch and   │
-│         Pull Updates          │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│   Switch to Working Branch    │
-│    and Merge Updates from     │
-│            Main               │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│   Resolve Conflicts if Any    │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│          Push to Remote       │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│      Create Pull Request      │
-│   and Request Review from     │
-│            Others             │
-└──────────────┬────────────────┘
-               │
-               ▼
-┌───────────────────────────────┐
-│  After Approval, Squash and   │
-│            Merge              │
-└───────────────────────────────┘
+```javascript
+{
+  "undoRedo": {
+    "scope_name": {
+      "past": [
+        { "type": "CREATE", "newData": { "id": "item1", "name": "Item" } },
+        { "type": "UPDATE", "oldData": {...}, "newData": {...} }
+      ],
+      "future": [
+        { "type": "DELETE", "oldData": { "id": "item2" } }
+      ]
+    }
+  }
+}
 ```
 
----
-
-### 📌 Notes for Enhanced Development Progress
-
-- **Consistency**: Adhere strictly to naming and commit conventions to maintain a clear, readable history.
-- **Frequent Pulls**: Regularly pull updates from the main branch to avoid large conflicts.
-- **Communication**: Keep the team informed about your progress and any blockers to ensure a smooth workflow.
-- **Review Requests**: Aim for timely reviews by tagging appropriate reviewers, especially for critical features.
+**Key Features**:
+- **Scoped states**: Each feature (e.g., "budget", "shoppingList") maintains its own past/future stack.
+- **Record types**: CREATE, UPDATE, DELETE operations are tracked with old and new data.
+- **MAX_HISTORY**: Capped at 20 entries per scope to prevent unbounded memory growth.
+- **Actions**: `initScope()`, `pushHistory()`, `undo()`, `redo()` for history management.
 
 ---
 
-## 📊 Project Graph
+## Known Limitations
+
+- There are no automated tests yet; the codebase currently lacks unit, integration, and end-to-end coverage.
+- Undo/redo functionality has been implemented for key scopes but is not complete across all features.
+- Several application features remain partial or in-progress and may not behave as expected.
+- Error handling is basic and should be enhanced for production readiness.
+
+---
+## Project Structure
 
 Here's an example of the high-level structure of this project:
 
 ```plaintext
-.
-├── src
-│   ├── apis           # API calls and services
-│   ├── assets         # Images, icons, fonts, global styles
-│   ├── components     # Reusable components
-│   ├── context        # React Context providers
-│   ├── hooks          # Custom hooks
-│   ├── layouts        # Layout wrappers
-│   ├── pages          # Main views/pages
-│   ├── routes         # Routing config
-│   └── utils          # Helper functions and utilities
-├── public
-│   └── index.html     # Main HTML file
-└── README.md
+Features are organized by domain (budget, shopping, dashboard, undo/redo). Shared components, utilities, and configuration sit at the root `src/` level.
+
+```plaintext
+src/
+├── app/
+│   └── store.js                      # Redux store configuration
+├── features/
+│   ├── budget/
+│   │   ├── budgetSlice.js            # Redux slice & reducers
+│   │   ├── budgetSelectors.js        # Memoized selectors
+│   │   └── budgetThunks.js           # Async actions (fetch, update, delete)
+│   ├── [other features]/
+│   └── undoRedo/
+│       └── undoRedoSlice.js          # Undo/redo history management
+├── apollo/
+│   └── client.js                     # Apollo Client configuration & InMemoryCache
+├── context/
+│   ├── AuthContext.jsx               # Authentication & session state
+│   └── ThemeContext.jsx              # Theme preference state
+├── graphql/
+│   ├── mutations/                    # GraphQL mutations
+│   └── queries/                      # GraphQL queries
+├── components/                       # Reusable UI components
+├── pages/                            # Page-level components mapped to routes
+├── hooks/                            # Custom React hooks
+├── routes/                           # Application routing configuration
+├── schemas/                          # Yup validation
+├── utils/                            # Helper functions and shared utilities
+├── constants/                        # Application constants (enums, labels, config values)
+├── assets/                           # Static assets
+├── layouts/                          # Layout components
+├── App.jsx                           # Root component
+├── main.jsx                          # Bootstrap entry point
+└── index.css                         # Global styles
 ```
 
----
+## Setup Guide
 
-> **Happy Coding & Chúc mừng năm mới! 🧧** Build something meaningful while practicing real-world React state management and UX design 🎉
+Follow these steps to get the project running locally.
+
+### Prerequisites
+
+- Node.js (v16 or later) and npm installed
+- Network access to the configured GraphQL API endpoint (set via `VITE_GRAPHQL_URL` in `.env`)
+
+### Installation
+
+Clone the repository and install dependencies:
+
+```bash
+npm install
+```
+
+Running the Project
+Start the development server with:
+
+```bash
+npm run dev
+```
+
+The app will be available at `http://localhost:5173` by default.
+

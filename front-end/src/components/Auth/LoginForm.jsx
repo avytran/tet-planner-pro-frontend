@@ -7,7 +7,7 @@ import { InputField } from "./InputField";
 import { FaRegUserCircle } from "react-icons/fa";
 import { TbLockPassword } from "react-icons/tb";
 import AuthButton from "./Button";
-import logo from "../../../public/logo.png";
+import logo from "../../assets/images/logo.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { loginSchema } from "@/schemas/login.schema";
 import { useContext } from "react";

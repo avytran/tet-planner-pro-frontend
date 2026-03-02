@@ -35,3 +35,11 @@ export const DELETE_SHOPPING_ITEM = gql`
         }
     }
 `;
+
+export const DELETE_ALL_SHOPPING_ITEMS = gql`
+    mutation DeleteAllShoppingItemsOfUser($userId: String!) {
+        deleteAllShoppingItemsOfUser(userId: $userId) {
+            deletedShoppingItems
+        }
+    }
+`;
