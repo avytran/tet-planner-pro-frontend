@@ -63,13 +63,13 @@ export function useDashboardData(userId) {
       dispatch(fetchBudgetData(userId));
       dispatch(fetchTasksTotal(userId));
       dispatch(fetchItemsTotal(userId));
-      dispatch(fetchTaskCategory(userId))
-      dispatch(getSpendingTimelineThunk(userId))
+      dispatch(fetchTaskCategory(userId));
+      dispatch(getSpendingTimelineThunk(userId));
     }
   }, [userId, dispatch]);
 
   useEffect(() => {
-    if (userId && tasksPageSize && itemsPageSize) {
+    if (userId && (tasksPageSize > 0 || itemsPageSize > 0)) {
       dispatch(fetchTasks(
         {
           userId: userId,
