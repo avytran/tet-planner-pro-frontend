@@ -57,7 +57,6 @@ export default function ShoppingListPage() {
       fetchPolicy: "cache-and-network",
     },
   );
-  console.log("Shopping list data:", selectedBudgetId);
   const currentData = data || previousData;
 
   const totalPages = currentData?.getShoppingItemsOfUser?.totalPages || 1;
