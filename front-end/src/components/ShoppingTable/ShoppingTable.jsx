@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation } from '@apollo/client/react';
-import { DELETE_SHOPPING_ITEM } from '@/graphql/mutations/shoppingItem.mutation';
+import { DELETE_SHOPPING_ITEM } from '@/graphql/mutations/shopping.mutation';
 
 import { PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 

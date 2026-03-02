@@ -47,3 +47,12 @@ export const PATCH_TASK = gql`
         }
     }
 `;
+
+export const DELETE_ALL_TASKS = gql`
+    mutation DeleteAllTasksOfUser($userId: String!) {
+        deleteAllTasksOfUser(userId: $userId) {
+            deletedTasks
+            deletedShoppingItems
+        }
+    }
+`;
