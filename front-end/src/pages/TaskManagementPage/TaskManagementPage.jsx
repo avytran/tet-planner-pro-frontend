@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@apollo/client/react";
+import { useQuery, useMutation } from "@apollo/client/react";
+
+import { DELETE_ALL_TASKS } from "@/graphql/mutations/task.mutation";
+
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -47,6 +50,7 @@ export default function TaskManagementPage() {
     data: tasksData,
     loading: isTasksLoading,
     error: tasksError,
+    refetch
   } = useQuery(GET_TASKS_OF_USER, {
     variables: {
       userId: user?.id,
@@ -57,6 +61,8 @@ export default function TaskManagementPage() {
     },
     skip: !user?.id,
   });
+
+  const [deleteAllTasks] = useMutation(DELETE_ALL_TASKS);
 
   const totalPages = tasksData?.getTasksOfUser?.totalPages || 1;
 
@@ -150,8 +156,14 @@ export default function TaskManagementPage() {
     };
   }, [tasks]);
 
-  const clearAll = () => {
+  const clearAll = async () => {
     setTasks([]);
+    await deleteAllTasks({
+      variables: {
+        userId: user.id
+      }
+    });
+    await refetch();
   };
 
   const handleOpenCreateTaskForm = () => {
