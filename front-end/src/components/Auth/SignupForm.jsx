@@ -9,7 +9,7 @@ import { FaRegUserCircle } from "react-icons/fa";
 import { TbLockPassword } from "react-icons/tb";
 import { ImProfile } from "react-icons/im";
 import AuthButton from "./Button";
-import logo from "../../assets/images/logo.jpg";
+import logo from "../../assets/images/logo.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { REGISTER } from "@/graphql/mutations/auth.mutation";
 import { signupSchema } from "@/schemas/signup.schema";

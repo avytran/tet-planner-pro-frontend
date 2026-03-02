@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
 import avatarImg from "@/assets/images/avatar.png";
-import logo from "../../../public/logo.png"
+import logo from "../../assets/images/logo.png"
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
