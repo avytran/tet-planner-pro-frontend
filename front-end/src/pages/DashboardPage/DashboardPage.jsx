@@ -5,11 +5,19 @@ import PieCenterLabel from "../../components/ChartsComponent/PieCenterLabel";
 import { DotCircle, EmptyCircle } from '../../components/Icons/outline';
 import { CheckCircle, ExclamationCircle } from '../../components/Icons/solid';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
-import { useDashboardData } from '../../hooks/useDashboardData';
-import { progressTaskColor, progressBudgetColor } from "../../utils/dashboardUtils";
+// import { rainbowSurgePalette } from '@mui/x-charts/colorPalettes';
+import { useDashboardData } from '@/hooks/useDashboardData';
+import { progressTaskColor, progressBudgetColor } from "@/utils/dashboardUtils";
+import { transformSpendingTimelineData } from "@/utils/transformSpendingTimelineData"
+import {
+  BUDGET_CHART_COLORS,
+} from "@/constants/budgetConstant.js";
+import { useAuth } from '@/hooks/useAuth';
+import { useMemo } from 'react';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+
   const {
     loading,
     error,
@@ -25,10 +33,9 @@ export default function DashboardPage() {
     itemsPercentage,
     budgetSpentPercentage,
     categorySeries,
-    timelineSeries,
-    datePoints,
+    spendingTimeline,
     reminderNotification
-  } = useDashboardData();
+  } = useDashboardData(user.id);
 
   if (loading) {
     return (
@@ -53,6 +60,10 @@ export default function DashboardPage() {
 
   const status = (value) => value === 100 ? "Completed!" : "Completed...";
   const statusBudget = (value) => value >= 100 ? "Spent!" : "Spent...";
+
+  const {  dates: datePoints, series: timelineSeries } = useMemo(
+    () => transformSpendingTimelineData(spendingTimeline), 
+    [spendingTimeline, BUDGET_CHART_COLORS]);
 
   return (
     <div className="dashboard-container bg-bg px-4 py-12 md:p-20">
@@ -345,7 +356,7 @@ export default function DashboardPage() {
           <LineChart
             series={timelineSeries}
             height={300}
-            colors={rainbowSurgePalette}
+            // colors={rainbowSurgePalette}
             xAxis={[{
               scaleType: 'point', data: datePoints
             }]}
