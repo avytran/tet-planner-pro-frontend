@@ -3,5 +3,11 @@
     "github": {
         "enabled": true,
         "autoJobCancelation": true
-    }
+    },
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/"
+        }
+    ]
 }
