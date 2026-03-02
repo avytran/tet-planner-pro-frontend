@@ -18,10 +18,14 @@ const budgetSlice = createSlice({
     spendingTimeline: { dates: [], series: [] },
     status: "idle",
     error: null,
+    selectedBudgetId: null,
   },
   reducers: {
     setTotalBudget: (state, action) => {
       state.totalBudget = action.payload;
+    },
+    setSelectedBudgetId: (state, action) => {
+      state.selectedBudgetId = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -130,5 +134,7 @@ const budgetSlice = createSlice({
       });
   },
 });
+
+export const { setTotalBudget, setSelectedBudgetId } = budgetSlice.actions;
 
 export default budgetSlice.reducer;
