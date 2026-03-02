@@ -131,7 +131,6 @@ export default function BudgetCategoryCard({
           onClick={() => {
             dispatch(setSelectedBudgetId(id));
             navigate("/shopping-list");
-            console.log(id);
           }}
         />
         <div className="flex">

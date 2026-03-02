@@ -2,7 +2,10 @@ import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
 import avatarImg from "@/assets/images/avatar.png";
-import logo from "../../../public/logo.png"
+import logo from "../../../public/logo.png";
+import { useDispatch } from "react-redux";
+import { set } from "react-hook-form";
+import { resetSelectedBudgetId } from "@/features/budget/budgetSlice";
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +15,8 @@ const Header = () => {
     { name: "Shopping List", href: "/shopping-list" },
     // { name: "About", href: "/about" },
   ];
+
+  const dispatch = useDispatch();
   return (
     <header className="header">
       <div className="header-container">
@@ -37,6 +42,7 @@ const Header = () => {
                 className={({ isActive }) =>
                   isActive ? "active-link nav-item" : "nav-item"
                 }
+                onClick={() => dispatch(resetSelectedBudgetId())}
               >
                 {item.name}
               </NavLink>
