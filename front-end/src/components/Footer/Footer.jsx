@@ -22,7 +22,7 @@ const Footer = () => {
           <h4>Liên kết</h4>
           <ul>
             <li>
-              <a href="/dashboard">Dashboard</a>
+              <a href="/">Dashboard</a>
             </li>
             <li>
               <a href="/task-management">Task management</a>
@@ -38,7 +38,7 @@ const Footer = () => {
 
         <div className="footer-contact">
           <h4>Contact</h4>
-          <p>Email: stetplannerproluckymoney@gmail.com</p>
+          <p>Email: tetplannerproluckymoney@gmail.com</p>
           <p>Hotline: 0901 234 567</p>
           <p>Address: Q.1, TP.HCM</p>
         </div>
