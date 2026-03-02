@@ -18,14 +18,22 @@ const budgetSlice = createSlice({
     spendingTimeline: { dates: [], series: [] },
     status: "idle",
     error: null,
-    selectedBudgetId: null,
+    selectedBudgetId: [],
   },
   reducers: {
     setTotalBudget: (state, action) => {
       state.totalBudget = action.payload;
     },
     setSelectedBudgetId: (state, action) => {
-      state.selectedBudgetId = action.payload;
+      const currentValues = state.selectedBudgetId;
+      const value = action.payload;
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter((item) => item !== value)
+        : [...currentValues, value];
+      state.selectedBudgetId = newValues;
+    },
+    resetSelectedBudgetId: (state) => {
+      state.selectedBudgetId = [];
     },
   },
   extraReducers: (builder) => {
@@ -135,6 +143,7 @@ const budgetSlice = createSlice({
   },
 });
 
-export const { setTotalBudget, setSelectedBudgetId } = budgetSlice.actions;
+export const { setTotalBudget, setSelectedBudgetId, resetSelectedBudgetId } =
+  budgetSlice.actions;
 
 export default budgetSlice.reducer;

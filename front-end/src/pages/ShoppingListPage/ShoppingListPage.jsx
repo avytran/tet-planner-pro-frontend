@@ -19,9 +19,13 @@ import { ITEMS_PER_PAGE } from "@/constants/shoppingConstant";
 import { useSelector } from "react-redux";
 
 export default function ShoppingListPage() {
+  const selectedBudgetId = useSelector(
+    (state) => state.budget.selectedBudgetId,
+  );
+
   const [filters, setFilters] = useState({
     priceRange: [0, 5000000],
-    categories: [],
+    categories: selectedBudgetId ? selectedBudgetId : [],
     timeline: [],
     status: [],
   });
@@ -33,13 +37,8 @@ export default function ShoppingListPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [openConfirm, setOpenConfirm] = useState(false);
 
-  const selectedBudgetId = useSelector(
-    (state) => state.budget.selectedBudgetId,
-  );
-
   const buildParams = () => {
     const params = {
-      budgetId: selectedBudgetId || undefined,
       sortBy: sortValue || undefined,
       sortOrder: "asc",
       page: currentPage,

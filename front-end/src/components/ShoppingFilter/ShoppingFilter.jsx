@@ -1,5 +1,5 @@
-import React from "react";
-import { useSelector } from "react-redux";
+import { setSelectedBudgetId } from "@/features/budget/budgetSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const FILTER_OPTS = {
   status: [
@@ -59,6 +59,8 @@ export const ShoppingFilter = ({
   const selectedBudgetId = useSelector(
     (state) => state.budget.selectedBudgetId,
   );
+  const dispatch = useDispatch();
+
   return (
     <div className="w-full md:w-[220px] shrink-0 text-left rounded-xl p-4 shadow-md border border-gray-200 bg-surface">
       {/* HEADER */}
@@ -127,11 +129,11 @@ export const ShoppingFilter = ({
               <FilterCheckbox
                 key={cat.id}
                 label={cat.name}
-                checked={
-                  filters.categories?.includes(cat.id) ||
-                  selectedBudgetId === cat.id
-                }
-                onChange={() => handleCheckboxChange("categories", cat.id)}
+                checked={filters.categories?.includes(cat.id)}
+                onChange={() => {
+                  handleCheckboxChange("categories", cat.id);
+                  dispatch(setSelectedBudgetId(cat.id));
+                }}
               />
             ))
           ) : (
