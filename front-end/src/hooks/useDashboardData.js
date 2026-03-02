@@ -63,8 +63,8 @@ export function useDashboardData(userId) {
       dispatch(fetchBudgetData(userId));
       dispatch(fetchTasksTotal(userId));
       dispatch(fetchItemsTotal(userId));
-      dispatch(fetchTaskCategory(userId));
-      dispatch(getSpendingTimelineThunk(userId));
+      dispatch(fetchTaskCategory(userId))
+      dispatch(getSpendingTimelineThunk(userId))
     }
   }, [userId, dispatch]);
 
