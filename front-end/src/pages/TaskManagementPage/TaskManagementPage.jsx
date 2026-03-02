@@ -23,6 +23,7 @@ import { TaskChart } from "@/components/Task/TaskChart";
 import { TaskProgress } from "@/components/Task/TaskProgress";
 import { TaskFilter } from "@/components/Task/TaskFilter";
 import { UndoRedoButtons } from "@/components/UndoRedoButtons/UndoRedoButtons";
+import { ConfirmModel } from "@/components/Task/ConfirmModel";
 
 import { findItemById } from "@/utils/findItemById";
 import { CHART_COLORS } from "@/constants/taskConstant";
@@ -45,6 +46,7 @@ export default function TaskManagementPage() {
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [openConfirm, setOpenConfirm] = useState(false);
 
   const {
     data: tasksData,
@@ -156,14 +158,15 @@ export default function TaskManagementPage() {
     };
   }, [tasks]);
 
-  const clearAll = async () => {
-    setTasks([]);
+  const handleDeleteAll = async () => {
     await deleteAllTasks({
       variables: {
         userId: user.id
       }
     });
     await refetch();
+    setTasks([]);
+    setOpenConfirm(false);
   };
 
   const handleOpenCreateTaskForm = () => {
@@ -182,11 +185,22 @@ export default function TaskManagementPage() {
 
   return (
     <section className="bg-bg min-h-screen flex flex-col px-4 py-12 md:p-20">
+      {
+        openConfirm && (
+          <ConfirmModel
+            setOpenConfirm={setOpenConfirm}
+            title="Delete All Tasks"
+            msg="Are you sure you want to delete all tasks and all related shopping items?"
+            mutationName="Delete"
+            handleMutation={handleDeleteAll}
+          />
+        )
+      }
       <div className="container mx-auto max-w-screen-2xl">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-5xl font-bold text-primary">Task Management</h1>
           <div className="flex items-center gap-3">
-            <UndoRedoButtons 
+            <UndoRedoButtons
               handleUndo={handleUndo}
               handleRedo={handleRedo}
               canUndo={canUndo}
@@ -203,7 +217,11 @@ export default function TaskManagementPage() {
               label="Clear All"
               color="danger"
               className="!rounded-full !px-5 !py-2 text-sm"
-              onClick={clearAll}
+              onClick={() => {
+                if (visibleTasks.length > 0) {
+                  setOpenConfirm(true)
+                }
+              }}
             />
           </div>
         </div>
@@ -273,9 +291,8 @@ export default function TaskManagementPage() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === page ? "bg-primary text-white" : "border"
-                    }`}
+                    className={`px-3 py-1 rounded ${currentPage === page ? "bg-primary text-white" : "border"
+                      }`}
                   >
                     {page}
                   </button>
