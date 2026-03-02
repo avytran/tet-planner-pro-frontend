@@ -14,12 +14,12 @@ const Footer = () => {
         <div className="footer-brand">
           <h3 className="footer-title">Lucky Money</h3>
           <p className="footer-desc">
-            Ứng dụng hỗ trợ lập kế hoạch Tết, quản lý công việc và ngân sách.
+            A smart app for planning Tet, managing tasks, and staying within your budget.
           </p>
         </div>
 
         <div className="footer-links">
-          <h4>Liên kết</h4>
+          <h4>Links</h4>
           <ul>
             <li>
               <a href="/">Dashboard</a>
@@ -39,8 +39,6 @@ const Footer = () => {
         <div className="footer-contact">
           <h4>Contact</h4>
           <p>Email: tetplannerproluckymoney@gmail.com</p>
-          <p>Hotline: 0901 234 567</p>
-          <p>Address: Q.1, TP.HCM</p>
         </div>
       </div>
 
