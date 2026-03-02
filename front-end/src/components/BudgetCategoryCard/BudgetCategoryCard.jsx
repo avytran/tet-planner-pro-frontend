@@ -19,6 +19,8 @@ import {
 import { removeItemsByBudgetId } from "@/features/shoppingList/shoppingListSlice";
 import { RESET_BUDGET_MESSAGES } from "@/constants/budgetConstant";
 import { ConfirmationModal } from "../BudgetModal/ConfirmationModal";
+import { useNavigate } from "react-router-dom";
+import { setSelectedBudgetId } from "@/features/budget/budgetSlice";
 
 export default function BudgetCategoryCard({
   id,
@@ -42,6 +44,7 @@ export default function BudgetCategoryCard({
   }
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const handleDelete = async () => {
     try {
@@ -125,6 +128,11 @@ export default function BudgetCategoryCard({
         <CommonButton
           label={"Shopping List"}
           trailingIcon={<ArrowRightIcon className="h-5 w-5" />}
+          onClick={() => {
+            dispatch(setSelectedBudgetId(id));
+            navigate("/shopping-list");
+            console.log(id);
+          }}
         />
         <div className="flex">
           <div className="h-6 w-6 bg-primary-strong rounded-full absolute right-12" />
