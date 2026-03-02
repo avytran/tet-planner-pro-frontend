@@ -2,22 +2,32 @@ import React, { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import "./Header.css";
 import avatarImg from "@/assets/images/avatar.png";
+import logo from "../../../public/logo.png"
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navItems = [
-    { name: "Dashboard", href: "/dashboard" },
     { name: "Task Management", href: "/task-management" },
     { name: "Budget Management", href: "/budget-management" },
     { name: "Shopping List", href: "/shopping-list" },
-    { name: "About", href: "/about" },
+    // { name: "About", href: "/about" },
   ];
   return (
     <header className="header">
       <div className="header-container">
         {/* LEFT SIDE */}
         <div className="header-left">
-          <h1 className="logo-web">Lucky Money</h1>
+          <NavLink
+            to="/"
+            className="ml-14 flex items-center gap-2 font-bold text-lg"
+          >
+            <img
+              src={logo}
+              alt="Lucky Money logo"
+              className="w-6 h-6 object-cover"
+            />
+            <span>Lucky Money</span>
+          </NavLink>
 
           <nav className="nav-desktop">
             {navItems.map((item) => (
@@ -36,7 +46,7 @@ const Header = () => {
 
         {/* RIGHT SIDE */}
         <div className="header-right">
-          <div className="notification">
+          {/* <div className="notification">
             <span className="icon" aria-hidden="true">
               🔔
             </span>
@@ -45,7 +55,7 @@ const Header = () => {
 
           <span className="icon" aria-hidden="true">
             ⚙️
-          </span>
+          </span> */}
 
           <Link to="/profile" className="avatar" aria-label="Open profile">
             <img src={avatarImg} alt="" />

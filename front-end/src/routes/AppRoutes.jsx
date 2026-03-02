@@ -20,7 +20,6 @@ export default function AppRoutes() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<MainLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="task-management" element={<TaskManagementPage />} />
           <Route path="budget-management" element={<BudgetManagementPage />} />
           <Route path="shopping-list" element={<ShoppingListPage />} />
