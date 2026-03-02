@@ -50,7 +50,7 @@ export default function ShoppingItemForm({ onClose, itemId, refetch, remainingBu
 
     const onSubmit = async (data) => {
         const formattedPrice = Number(data.price.replaceAll(",", ""));
-        if (formattedPrice > remainingBudget) {
+        if (remainingBudget < 0) {
             setError("price", {
                 type: "manual",
                 message: "Total price cannot exceed the budget.",
