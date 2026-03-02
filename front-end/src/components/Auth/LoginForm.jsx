@@ -7,7 +7,7 @@ import { InputField } from "./InputField";
 import { FaRegUserCircle } from "react-icons/fa";
 import { TbLockPassword } from "react-icons/tb";
 import AuthButton from "./Button";
-import logo from "../../assets/images/logo.jpg";
+import logo from "../../../public/logo.png";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { loginSchema } from "@/schemas/login.schema";
 import { useContext } from "react";
@@ -126,7 +126,7 @@ export const LoginForm = () => {
 
         <div className="hidden md:block w-full md:w-1/2 bg-neutral-100 relative">
           <div className="absolute inset-0 flex items-center justify-center">
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            <img src={logo} alt="Logo" className="w-60 object-cover" />
           </div>
         </div>
       </Card>
